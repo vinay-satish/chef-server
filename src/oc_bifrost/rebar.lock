@@ -71,11 +71,13 @@
  {<<"sync">>,
   {git,"git://github.com/rustyio/sync.git",
        {ref,"d7ded2d221fb542b3417cffe77163206613daacb"}},
-  0},
- {<<"webmachine">>,
-  {git,"git://github.com/chef/webmachine",
-       {ref,"8525948570419ba3e330ee14cb28fdf2de788506"}},
-  1}]}.
+  0}
+%,
+% {<<"webmachine">>,
+%  {git,"git://github.com/chef/webmachine",
+%       {ref,"8525948570419ba3e330ee14cb28fdf2de788506"}},
+%  1}
+]}.
 [
 {pkg_hash,[
  {<<"recon">>, <<"2F7FCBEC2C35034BADE2F9717F77059DC54EB4E929A3049CA7BA6775C0BD66CD">>}]}
