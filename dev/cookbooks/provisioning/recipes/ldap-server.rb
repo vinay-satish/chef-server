@@ -36,7 +36,7 @@ chmod 600 #{node['ldap']['ssl_key']}
 chown openldap:openldap #{node['ldap']['ssl_key']}
 chown openldap:openldap #{node['ldap']['ssl_cert']}
   EOH
-  not_if { File.exist?(node['ldap']['ssl_key']) }
+  not_if { ::File.exist?(node['ldap']['ssl_key']) }
 end
 
 #
@@ -59,7 +59,6 @@ end
   logging
   tls
 ).each do |config|
-
   template "/etc/ldap/config/#{config}.ldif" do
     source "ldap-config/#{config}.ldif.erb"
     owner 'openldap'
