@@ -44,25 +44,41 @@ In order to release, you will need the following accounts/permissions:
 
 ### Testing the Release
 
-> This process is currently manual. There is working being done to fold this into a testing pipeline.
+Every merge to chef-server master is built and this clean build is tested with the automated Integration Test Pipeline https://buildkite.com/chef/chef-chef-server-master-integration-test:
 
-Every merge to chef-server master is built and this clean build is tested
-with all pedant tests. We only run smoke tests for the FIPS mode. Upgrade
-and addon testing must be done in advance of the release.
+- Click on `New Build`.
+- Leave `Branch` set to `master`.
+- Click on `Options` to expand the `Environment Variables` field.
+- Enter `UPGRADE_VERSION=<build record>` into the `Options | Environment Variables` field, where `<build record>` is the version number string of the omnibus/adhoc build you wish to test (e.g. `13.1.64+20201234567890`).
+- Optionally, fill-in the `Message` field with something descriptive, e.g. the version number string of the build record.
+- Click on `Create Build`.
 
-- [ ] Test as per the matrix from: https://docs.google.com/spreadsheets/d/1_gwxdrMnUiV8t2noi8zs1HyGivtIGMEx9KbYriIw7BY/edit#gid=536218507
+Currently, the Integration Test Pipeline does not perform a test login to Chef Manage, so this should be done manually by picking a representative Azure scenario and a representative AWS scenario:
 
-- [ ] If this release is being made to address a specific
-  high-urgency, high-severity customer issue or security issue, please
-  *specifically* test that the issue in question is fixed.
+- `NOTE: NOT SURE IF THESE INSTRUCTIONS ARE CORRECT.`
+- Ensure that your chosen scenario installs the Chef Manage add-on.  This is normally done by default, but can be explicitly enabled by setting the option `ENABLE_ADDON_CHEF_MANAGE=true`.
+- Obtain the DNS name of the ephemeral machine by observing the output of the boot-up.  A sample output is shown below:
+```
+null_resource.chef_server_config: Provisioning with 'remote-exec'...
+null_resource.chef_server_config (remote-exec): Connecting to remote host via SSH...
+null_resource.chef_server_config (remote-exec):   Host: ec2-34-212-122-231.us-west-2.compute.amazonaws.com
+null_resource.chef_server_config (remote-exec):   User: ec2-user
+null_resource.chef_server_config (remote-exec):   Password: false
+null_resource.chef_server_config (remote-exec):   Private key: false
+null_resource.chef_server_config (remote-exec):   Certificate: false
+null_resource.chef_server_config (remote-exec):   SSH Agent: true
+null_resource.chef_server_config (remote-exec):   Checking Host Key: false
+null_resource.chef_server_config (remote-exec): Connected!
+null_resource.chef_server_config (remote-exec): echo -e '
+null_resource.chef_server_config (remote-exec): BEGIN INSTALL CHEF SERVER
+```
+- Obtain the user and password by... ??? `FINISH THIS`
+- Hit the server via `http`, e.g. `http://whatever-public-ip?`
+- Next steps
 
-If one of these tests has failed, you cannot ship a release until it's fixed.
-Note, no changes other than CHANGELOG/RELEASE_NOTES changes should
-land on master between testing and releasing since we typically tag
-HEAD of master. If something large does land on master, the release
-tag you create should point specifically at the build that you tested.
-The git SHA of the build you are testing can be found in
-`/opt/opscode/version-manifest.json`.
+[insert necessary manual testing instructions here]
+
+If there are failures, unless the failure is a "known failure" or expected, you cannot ship a release until it's fixed. Note, no changes other than CHANGELOG/RELEASE_NOTES changes should land on master between testing and releasing since we typically tag HEAD of master. If something large does land on master, the release tag you create should point specifically at the build that you tested. The git SHA of the build you are testing can be found in /opt/opscode/version-manifest.json.
 
 ### Preparing for the release
 
