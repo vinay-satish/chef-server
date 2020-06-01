@@ -23,10 +23,7 @@
 -include_lib("eunit/include/eunit.hrl").
 
 -export([is_authorized/2]).
--ifdef(TEST).
--include_lib("eunit/include/eunit.hrl").
 -compile(export_all).
--endif.
 
 -define(SECONDS_AT_EPOCH, 62167219200).
 -include("internal.hrl").
@@ -47,7 +44,7 @@ is_authorized(Req0, #context{} = Context) ->
         undefined ->
             do_signed_url_authorization(RequestId, Req1, Context, Headers);
         IncomingAuth ->
-            ?debugFmt("~ndoing standard authorization", []),
+            io:format("~ndoing standard authorization", []),
             do_standard_authorization(RequestId, IncomingAuth, Req1, Context, Headers)
     end.
 %-endif.
@@ -56,51 +53,51 @@ is_authorized(Req0, #context{} = Context) ->
 % https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-query-string-auth.html
 do_signed_url_authorization(RequestId, Req0, Context, Headers0) ->
 
-%    %?debugFmt("~n~n--------------------------------", []),
-    ?debugFmt("~nin bksw_sec do_signed_url_authorization", []),
+%    %io:format("~n~n--------------------------------", []),
+    io:format("~nin bksw_sec do_signed_url_authorization", []),
 
     QueryParams = wrq:req_qs(Req0),
-    ?debugFmt("~nquery string: ~p", [QueryParams]),
+    io:format("~nquery string: ~p", [QueryParams]),
 
     Credential = wrq:get_qs_value("X-Amz-Credential", "", Req0),
-    ?debugFmt("~nx-amz-credential:  ~p", [wrq:get_qs_value("X-Amz-Credential", "", Req0)]),
+    io:format("~nx-amz-credential:  ~p", [wrq:get_qs_value("X-Amz-Credential", "", Req0)]),
 
     % can be undefined
     XAmzDate = wrq:get_qs_value("X-Amz-Date", "", Req0),
-    ?debugFmt("~nXAmzDate: ~p", [XAmzDate]),
+    io:format("~nXAmzDate: ~p", [XAmzDate]),
 
     SignedHeaderKeysString = wrq:get_qs_value("X-Amz-SignedHeaders", "", Req0),
-    ?debugFmt("~nsigned header keys string: ~p", [SignedHeaderKeysString]),
+    io:format("~nsigned header keys string: ~p", [SignedHeaderKeysString]),
 
     IncomingSignature = wrq:get_qs_value("X-Amz-Signature", "", Req0),
-    ?debugFmt("~nincoming signature: ~p", [IncomingSignature]),
+    io:format("~nincoming signature: ~p", [IncomingSignature]),
 
     % only used with query string (presigned url)
     % authentication, not with authorization header
     % 1 =< XAmzExpires =< 604800
     XAmzExpiresString = wrq:get_qs_value("X-Amz-Expires", "", Req0),
-    ?debugFmt("~nx-amz-expires: ~p", [XAmzExpiresString]),
+    io:format("~nx-amz-expires: ~p", [XAmzExpiresString]),
 
-    ?debugFmt("~ncalling do_common_authorization", []),
+    io:format("~ncalling do_common_authorization", []),
     do_common_authorization(RequestId, Req0, Context, Credential, XAmzDate, SignedHeaderKeysString, IncomingSignature, XAmzExpiresString, Headers0, presigned_url).
 
 % https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-auth-using-authorization-header.html
 do_standard_authorization(RequestId, IncomingAuth, Req0, Context, Headers0) ->
     try
-    ?debugFmt("~nDOING STANDARD AUTHORIZATION", []),
-    ?debugFmt("~nIncomingAuth: ~p", [IncomingAuth]),
+    io:format("~nDOING STANDARD AUTHORIZATION", []),
+    io:format("~nIncomingAuth: ~p", [IncomingAuth]),
 
     (ParseAuth = parse_authorization(IncomingAuth)) /= err orelse throw({RequestId, Req0, Context}),
     [Credential, SignedHeaderKeysString, IncomingSignature] = ParseAuth,
-    ?debugFmt("~nAuthorization:~n~p~n~p~n~p", [Credential, SignedHeaderKeysString, IncomingSignature]),
+    io:format("~nAuthorization:~n~p~n~p~n~p", [Credential, SignedHeaderKeysString, IncomingSignature]),
 %    [AWSAccessKeyId, CredentialScopeDate | _]  = parse_x_amz_credential(Credential),
-%    %?debugFmt("~naws-access-key-id: ~p~nCredentialScopeDate: ~p", [AWSAccessKeyId, CredentialScopeDate]),
+%    %io:format("~naws-access-key-id: ~p~nCredentialScopeDate: ~p", [AWSAccessKeyId, CredentialScopeDate]),
 
     % can be undefined
     XAmzDate = wrq:get_req_header("x-amz-date", Req0),
-    ?debugFmt("~nXAmzDate: ~p", [XAmzDate]),
+    io:format("~nXAmzDate: ~p", [XAmzDate]),
 
-    ?debugFmt("~ncalling do_common_authorization", []),
+    io:format("~ncalling do_common_authorization", []),
     do_common_authorization(RequestId, Req0, Context, Credential, XAmzDate, SignedHeaderKeysString, IncomingSignature, "300", Headers0, authorization_header)
 
     catch
@@ -131,7 +128,7 @@ do_common_authorization(RequestId, Req0, #context{reqid = ReqId} = Context, Cred
     % handle undefined, err
 
     (Host = wrq:get_req_header("Host", Req0)) /= undefined orelse throw({RequestId, Req0, Context}),
-    ?debugFmt("~nhost: ~p", [Host]),
+    io:format("~nhost: ~p", [Host]),
 
     (ParseCred = parse_x_amz_credential(Credential)) /= err orelse throw({RequestId, Req0, Context}),
     [AWSAccessKeyId, CredentialScopeDate, Region | _] = ParseCred,
@@ -146,34 +143,34 @@ do_common_authorization(RequestId, Req0, #context{reqid = ReqId} = Context, Cred
     %{AccessKey, SecretKey} = getkeys(AWSAccessKeyId, Context),
     {AccessKey, SecretKey} = {"e1efc99729beb175", "fc683cd9ed1990ca"},
 
-    ?debugFmt("~naws-access-key-id: ~p", [AWSAccessKeyId]),
-    ?debugFmt("~naccess-key-id: ~p",     [AccessKey]),
-    ?debugFmt("~nsecret-access-key: ~p", [SecretKey]),
+    io:format("~naws-access-key-id: ~p", [AWSAccessKeyId]),
+    io:format("~naccess-key-id: ~p",     [AccessKey]),
+    io:format("~nsecret-access-key: ~p", [SecretKey]),
 
     Headers = process_headers(Headers0),
-    ?debugFmt("~nheaders: ~p", [Headers]),
-    ?debugFmt("~nENSURE HOST HEADER ^^^", []),
+    io:format("~nheaders: ~p", [Headers]),
+    io:format("~nENSURE HOST HEADER ^^^", []),
 
     SignedHeaderKeys = parse_x_amz_signed_headers(SignedHeaderKeysString),
     SignedHeaders = get_signed_headers(SignedHeaderKeys, Headers, []),
-    ?debugFmt("~nsigned headers: ~p", [SignedHeaders]),
+    io:format("~nsigned headers: ~p", [SignedHeaders]),
 
     RawMethod = wrq:method(Req0),
     Method = string:to_lower(erlang:atom_to_list(RawMethod)),
-    ?debugFmt("~nmethod: ~p", [Method]),
+    io:format("~nmethod: ~p", [Method]),
 
     Path  = wrq:path(Req0),
-    ?debugFmt("~npath: ~p", [Path]),
+    io:format("~npath: ~p", [Path]),
     DispPath  = wrq:disp_path(Req0),
-    ?debugFmt("~ndisp_path: ~p", [DispPath]),
+    io:format("~ndisp_path: ~p", [DispPath]),
     RawPath  = wrq:raw_path(Req0),
-    ?debugFmt("~nrawpath: ~p", [RawPath]),
+    io:format("~nrawpath: ~p", [RawPath]),
     PathTokens  = wrq:path_tokens(Req0),
-    ?debugFmt("~npath-tokens: ~p", [PathTokens]),
+    io:format("~npath-tokens: ~p", [PathTokens]),
 
     {BucketName, Key} = get_bucket_key(Path),
-    ?debugFmt("~nbucketname: ~p", [BucketName]),
-    ?debugFmt("~nkey: ~p", [Key]),
+    io:format("~nbucketname: ~p", [BucketName]),
+    io:format("~nkey: ~p", [Key]),
 
 %TODO:
 % would be nice when flagging errors to flag more specific errors than signing error or forbidden,
@@ -186,19 +183,19 @@ do_common_authorization(RequestId, Req0, #context{reqid = ReqId} = Context, Cred
     Config = mini_s3:new(AccessKey, SecretKey, Host),
 
     Url = erlcloud_s3:get_object_url(BucketName, Key, Config),
-    ?debugFmt("~nerlcloud_s3:get_object_url: ~p", [Url]),
-    ?debugFmt("~nTODO: this path needs to be escaped ^^^", []),
+    io:format("~nerlcloud_s3:get_object_url: ~p", [Url]),
+    io:format("~nTODO: this path needs to be escaped ^^^", []),
 
 %    This (below) caused a big webmachine error
 %    if you reference as full body vs chunked, you can't reference it the other way and vice versa
 %    Payload = wrq:req_body(Req0),
-%    %?debugFmt("~nbody (payload?): ~p", [Payload]),
+%    %io:format("~nbody (payload?): ~p", [Payload]),
 
     XAmzExpires = list_to_integer(XAmzExpiresString),
 
     case VerificationType of
         presigned_url ->
-            ?debugFmt("~nverification type: presigned_url", []),
+            io:format("~nverification type: presigned_url", []),
 
             "AWS4-HMAC-SHA256" == wrq:get_qs_value("X-Amz-Algorithm", Req0) orelse throw({RequestId, Req0, Context}),
 
@@ -207,17 +204,17 @@ do_common_authorization(RequestId, Req0, #context{reqid = ReqId} = Context, Cred
             check_signed_headers_common(SignedHeaders, Headers),
 
             ComparisonURL = mini_s3:s3_url(list_to_atom(Method), BucketName, Key, XAmzExpires, SignedHeaders, Date, Config),
-            ?debugFmt("~ncomparison url: ~p", [ComparisonURL]),
+            io:format("~ncomparison url: ~p", [ComparisonURL]),
             % compare signatures
             % assumes X-Amz-Signature is always on the end?
             Sig1 = list_to_binary(IncomingSignature),
             [_, ComparisonSig] = string:split(ComparisonURL, "&X-Amz-Signature=", all);
         authorization_header ->
-            ?debugFmt("~nverification type: authorization_header", []),
+            io:format("~nverification type: authorization_header", []),
 
             ComparisonURL = "blah",
             QueryParams = wrq:req_qs(Req0),
-            ?debugFmt("~nQueryParams: ~p", [QueryParams]),
+            io:format("~nQueryParams: ~p", [QueryParams]),
 
             % temporarily disabling this - should be re-enabled later
             %true == check_signed_headers_authhead(SignedHeaders, Headers) orelse throw({RequestId, Req0, Context}),
@@ -233,7 +230,7 @@ do_common_authorization(RequestId, Req0, #context{reqid = ReqId} = Context, Cred
             % unsigned payload
 %            SigV4Headers = erlcloud_aws:sign_v4(list_to_atom(Method), Path, Config, SignedHeadersNo256, <<>>, Region, "s3", QueryParams, Date),
             SigV4Headers = erlcloud_aws:sign_v4(list_to_atom(Method), Path, Config, SignedHeaders, <<>>, Region, "s3", QueryParams, Date),
-            ?debugFmt("~nsigv4headers: ~p", [SigV4Headers]),
+            io:format("~nsigv4headers: ~p", [SigV4Headers]),
 
             Sig1 = IncomingSignature,
 
@@ -241,8 +238,8 @@ do_common_authorization(RequestId, Req0, #context{reqid = ReqId} = Context, Cred
             [_, _, ComparisonSig] = ParseAuth
     end,
 
-    ?debugFmt("~nsig1: ~p", [Sig1         ]),
-    ?debugFmt("~nsig2: ~p", [ComparisonSig]),
+    io:format("~nsig1: ~p", [Sig1         ]),
+    io:format("~nsig2: ~p", [ComparisonSig]),
 
     % list_to_binary profiled faster than binary_to_list,
     % so use that for conversion and comparison.
@@ -250,7 +247,7 @@ do_common_authorization(RequestId, Req0, #context{reqid = ReqId} = Context, Cred
         ComparisonSig ->
             case is_expired(Date, XAmzExpires) of
                 true ->
-                    ?debugFmt("~nexpired signature", []),
+                    io:format("~nexpired signature", []),
                     ?LOG_DEBUG("req_id=~p expired signature (~p) for ~p",
                                [ReqId, XAmzExpires, Path]),
                     encode_access_denied_error_response(RequestId, Req0, Context);
@@ -260,20 +257,20 @@ do_common_authorization(RequestId, Req0, #context{reqid = ReqId} = Context, Cred
                         true ->
                             MaxAge = "max-age=" ++ XAmzExpiresString,
                             Req1 = wrq:set_resp_header("Cache-Control", MaxAge, Req0),
-                            ?debugFmt("~ndo_signed_url_authorization succeeded", []),
-                            ?debugFmt("~n-------------------------------------", []),
+                            io:format("~ndo_signed_url_authorization succeeded", []),
+                            io:format("~n-------------------------------------", []),
                             {true, Req1, Context};
                         false ->
-                            ?debugFmt("~ndo_signed_url_authorization failed", []),
-                            ?debugFmt("~n----------------------------------", []),
+                            io:format("~ndo_signed_url_authorization failed", []),
+                            io:format("~n----------------------------------", []),
                             ?LOG_DEBUG("req_id=~p signing error for ~p", [ReqId, Path]),
                             encode_sign_error_response(AWSAccessKeyId, IncomingSignature, RequestId,
                                                        ComparisonURL, Req0, Context)
                     end
             end;
         _ ->
-            ?debugFmt("~nbksw_sec: do_signed_url_authorization failed", []),
-            ?debugFmt("~n--------------------------------------------", []),
+            io:format("~nbksw_sec: do_signed_url_authorization failed", []),
+            io:format("~n--------------------------------------------", []),
             encode_access_denied_error_response(RequestId, Req0, Context)
     end
 
@@ -338,20 +335,20 @@ do_common_authorization(RequestId, Req0, #context{reqid = ReqId} = Context, Cred
 %                        true ->
 %                            MaxAge = "max-age=" ++ integer_to_list(ExpireDiff),
 %                            Req1 = wrq:set_resp_header("Cache-Control", MaxAge, Req0),
-%%?debugFmt("~ndo_signed_url_authorization succeeded", []),
-%%?debugFmt("~n--------------------------------", []),
+%%io:format("~ndo_signed_url_authorization succeeded", []),
+%%io:format("~n--------------------------------", []),
 %                            {true, Req1, Context};
 %                        false ->
-%%?debugFmt("~ndo_signed_url_authorization failed", []),
-%%?debugFmt("~n--------------------------------", []),
+%%io:format("~ndo_signed_url_authorization failed", []),
+%%io:format("~n--------------------------------", []),
 %                            ?LOG_DEBUG("req_id=~p signing error for ~p", [ReqId, Path]),
 %                            encode_sign_error_response(AWSAccessKeyId, IncomingSignature, RequestId,
 %                                                       StringToSign, Req0, Context)
 %                    end
 %                end;
 %        error ->
-%%?debugFmt("~nbksw_sec: make_signed_url_authorization failed", []),
-%%?debugFmt("~n--------------------------------", []),
+%%io:format("~nbksw_sec: make_signed_url_authorization failed", []),
+%%io:format("~n--------------------------------", []),
 %            encode_access_denied_error_response(RequestId, Req0, Context)
 %    end.
 
@@ -371,16 +368,16 @@ check_signed_headers_authhead(SignedHeaders, Headers) ->
 %        _ ->
 %            true
 %    end.
-?debugFmt("~nchecking headers...", []),
+io:format("~nchecking headers...", []),
 check_signed_headers_common(SignedHeaders, Headers),
 
 % x-amz-content-sha256 header is required
-?debugFmt("~nx-amz-content-sha256 present: ~p", [proplists:is_defined("x-amz-content-sha256", SignedHeaders)]),
+io:format("~nx-amz-content-sha256 present: ~p", [proplists:is_defined("x-amz-content-sha256", SignedHeaders)]),
 
 % if content-type header is present in request, it is required
 case proplists:is_defined("content-type", Headers) of
     true ->
-        ?debugFmt("~ncontent-type header present in request AND signed: ~p", [proplists:is_defined("content-type", SignedHeaders)]);
+        io:format("~ncontent-type header present in request AND signed: ~p", [proplists:is_defined("content-type", SignedHeaders)]);
     _ ->
         true
 end.
@@ -396,9 +393,9 @@ check_signed_headers_common(SignedHeaders, Headers) ->
 %
 %    % any x-amz-* headers present in request are required
 %    [] == [Key || {Key, _} <- Headers, is_amz(Key), not proplists:is_defined(Key, SignedHeaders)].
-?debugFmt("~nchecking headers...", []),
-?debugFmt("~nhost header present: ~p", [proplists:is_defined("host", SignedHeaders)]),
-?debugFmt("~nx-amz-* headers in request but not signed (should be none): ~p", [[Key || {Key, _} <- Headers, is_amz(Key), not proplists:is_defined(Key, SignedHeaders)]]),
+io:format("~nchecking headers...", []),
+io:format("~nhost header present: ~p", [proplists:is_defined("host", SignedHeaders)]),
+io:format("~nx-amz-* headers in request but not signed (should be none): ~p", [[Key || {Key, _} <- Headers, is_amz(Key), not proplists:is_defined(Key, SignedHeaders)]]),
 
 % any x-amz-* headers present in request are required
 [] == [Key || {Key, _} <- Headers, is_amz(Key), not proplists:is_defined(Key, SignedHeaders)].
