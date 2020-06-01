@@ -68,7 +68,7 @@ query_example_test_() ->
     Len = length(code:priv_dir(chef_index)),
     Dir = string:sub_string(code:priv_dir(chef_index), 1, Len - 4),
     Path = Dir ++ "/test/search_queries.txt",
-    ?debugFmt("Reading example queries from ~p", [Path]),
+    io:format("Reading example queries from ~p", [Path]),
     Queries = read_example_queries(Path),
     [ ?_assertEqual(E, chef_lucene:parse(I)) || {I, E} <- Queries ].
 
