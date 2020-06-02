@@ -153,10 +153,15 @@ do_common_authorization(RequestId, Req0, #context{reqid = ReqId} = Context, Cred
 
     SignedHeaderKeys = parse_x_amz_signed_headers(SignedHeaderKeysString),
     SignedHeaders = get_signed_headers(SignedHeaderKeys, Headers, []),
+
+%get_host_toggleport(Host, Config) ->
+%[case {K, V} of {"host", V} -> {"host", 2}; _ -> {K, V} end || {K, V} <- SignedHeaders].
+
+
     io:format("~nsigned headers: ~p", [SignedHeaders]),
 
     RawMethod = wrq:method(Req0),
-    Method = string:to_lower(erlang:atom_to_list(RawMethod)),
+    Method = list_to_atom(string:to_lower(erlang:atom_to_list(RawMethod))),
     io:format("~nmethod: ~p", [Method]),
 
     Path  = wrq:path(Req0),
@@ -203,11 +208,15 @@ do_common_authorization(RequestId, Req0, #context{reqid = ReqId} = Context, Cred
             %true == check_signed_headers_common(SignedHeaders, Headers) orelse throw({RequestId, Req0, Context}),
             check_signed_headers_common(SignedHeaders, Headers),
 
-            ComparisonURL = mini_s3:s3_url(list_to_atom(Method), BucketName, Key, XAmzExpires, SignedHeaders, Date, Config),
+            ComparisonURL = mini_s3:s3_url(Method, BucketName, Key, XAmzExpires, SignedHeaders, Date, Config),
             io:format("~ncomparison url: ~p", [ComparisonURL]),
-            % compare signatures
-            % assumes X-Amz-Signature is always on the end?
+
+            % list_to_binary profiled faster than binary_to_list,
+            % so use that for conversion and comparison.
+%Sig0
             Sig1 = list_to_binary(IncomingSignature),
+
+            % compare signatures.  assumes X-Amz-Signature is always on the end?
             [_, ComparisonSig] = string:split(ComparisonURL, "&X-Amz-Signature=", all);
         authorization_header ->
             io:format("~nverification type: authorization_header", []),
@@ -229,7 +238,7 @@ do_common_authorization(RequestId, Req0, #context{reqid = ReqId} = Context, Cred
             %SigV4Headers = erlcloud_aws:sign_v4(list_to_atom(Method), Path, Config, [{"host", "api"}], <<>>, Region, "s3", QueryParams, Date),
             % unsigned payload
 %            SigV4Headers = erlcloud_aws:sign_v4(list_to_atom(Method), Path, Config, SignedHeadersNo256, <<>>, Region, "s3", QueryParams, Date),
-            SigV4Headers = erlcloud_aws:sign_v4(list_to_atom(Method), Path, Config, SignedHeaders, <<>>, Region, "s3", QueryParams, Date),
+            SigV4Headers = erlcloud_aws:sign_v4(Method, Path, Config, SignedHeaders, <<>>, Region, "s3", QueryParams, Date),
             io:format("~nsigv4headers: ~p", [SigV4Headers]),
 
             Sig1 = IncomingSignature,
@@ -241,8 +250,6 @@ do_common_authorization(RequestId, Req0, #context{reqid = ReqId} = Context, Cred
     io:format("~nsig1: ~p", [Sig1         ]),
     io:format("~nsig2: ~p", [ComparisonSig]),
 
-    % list_to_binary profiled faster than binary_to_list,
-    % so use that for conversion and comparison.
     case Sig1 of
         ComparisonSig ->
             case is_expired(Date, XAmzExpires) of
