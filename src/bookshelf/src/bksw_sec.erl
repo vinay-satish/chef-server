@@ -217,22 +217,23 @@ io:format("~nhost_tokens: ~p", [wrq:host_tokens(Req0)]),
 
             % list_to_binary profiled faster than binary_to_list,
             % so use that for conversion and comparison.
-            Sig0 = list_to_binary(IncomingSignature),
+            IncomingSig = list_to_binary(IncomingSignature),
 
             % compare signatures.  assumes X-Amz-Signature is always on the end?
             [_, ComparisonSig] = string:split(ComparisonURL, "&X-Amz-Signature=", all),
             io:format("~ncomparison sig: ~p", [ComparisonSig]),
 
-            Sig1 = case Sig0 of
+            Sig1 = case IncomingSig of
                 ComparisonSig ->
-                    io:format("~nSig1 = case Sig0 (~p) of ComparisonSig (~p) -> Sig1 = Sig0", [Sig0, ComparisonSig]),
-                    Sig0;
+                    io:format("~nSig1 = case IncomingSig (~p) of ComparisonSig (~p) -> Sig1 = IncomingSig", [IncomingSig, ComparisonSig]),
+                    AltComparisonSig = "not computed",
+                    IncomingSig;
                 _ ->
                     AltComparisonURL = mini_s3:s3_url(Method, BucketName, Key, XAmzExpires, AltSignedHeaders, Date, Config),
                     io:format("~nalt comparison url: ~p", [AltComparisonURL]),
                     [_, AltComparisonSig] = string:split(AltComparisonURL, "&X-Amz-Signature=", all),
                     io:format("~nalt comparison sig: ~p", [AltComparisonSig]),
-                    io:format("~nSig1 = case Sig0 (~p) of AltComparisonSig (~p) -> Sig1 = AltComparisonSig", [Sig0, AltComparisonSig]),
+                    io:format("~nSig1 = case IncomingSig (~p) of AltComparisonSig (~p) -> Sig1 = AltComparisonSig", [IncomingSig, AltComparisonSig]),
                     AltComparisonSig
                 end;
 
@@ -260,15 +261,16 @@ io:format("~nhost_tokens: ~p", [wrq:host_tokens(Req0)]),
             SigV4Headers = erlcloud_aws:sign_v4(Method, Path, Config, SignedHeaders, <<>>, Region, "s3", QueryParams, Date),
             io:format("~nsigv4headers: ~p", [SigV4Headers]),
 
-            Sig0 = IncomingSignature,
+            IncomingSig = IncomingSignature,
 
             (ParseAuth = parse_authorization(proplists:get_value("Authorization", SigV4Headers, ""))) /= err orelse throw({RequestId, Req0, Context}),
             [_, _, ComparisonSig] = ParseAuth,
             io:format("~ncomparison sig: ~p", [ComparisonSig]),
 
-            Sig1 = case Sig0 of
+            Sig1 = case IncomingSig of
                 ComparisonSig ->
-                    Sig0;
+                    AltComparisonSig = "not computed",
+                    IncomingSig;
                 _ ->
                     AltSigV4Headers = erlcloud_aws:sign_v4(Method, Path, Config, AltSignedHeaders, <<>>, Region, "s3", QueryParams, Date),
                     (AltParseAuth = parse_authorization(proplists:get_value("Authorization", AltSigV4Headers, ""))) /= err orelse throw({RequestId, Req0, Context}),
@@ -278,13 +280,14 @@ io:format("~nhost_tokens: ~p", [wrq:host_tokens(Req0)]),
                 end
     end,
 
-    io:format("~nSig0: ~p", [Sig0         ]),
-    io:format("~nSig1: ~p", [Sig1         ]),
-    io:format("~nComparisonSig: ~p", [ComparisonSig]),
+    io:format("~nIncomingSig: ~p",      [IncomingSig        ]),
+    io:format("~nSig1: ~p",             [Sig1               ]),
+    io:format("~nComparisonSig: ~p",    [ComparisonSig      ]),
+    io:format("~nAltComparisonSig: ~p", [AltComparisonSig   ]),
 
-    case Sig1 of
-        ComparisonSig ->
-            io:format("~ncase Sig1 (~p) of ComparisonSig (~p)...", [Sig1, ComparisonSig]),
+    case IncomingSig of
+        Sig1 ->
+            io:format("~ncase IncomingSig (~p) of Sig1 (~p)...", [Sig1, ComparisonSig]),
             case is_expired(Date, XAmzExpires) of
                 true ->
                     io:format("~nexpired signature", []),
