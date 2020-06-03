@@ -154,10 +154,6 @@ do_common_authorization(RequestId, Req0, #context{reqid = ReqId} = Context, Cred
     SignedHeaderKeys = parse_x_amz_signed_headers(SignedHeaderKeysString),
     SignedHeaders = get_signed_headers(SignedHeaderKeys, Headers, []),
 
-%get_host_toggleport(Host, Config) ->
-%[case {K, V} of {"host", V} -> {"host", 2}; _ -> {K, V} end || {K, V} <- SignedHeaders].
-
-
     io:format("~nsigned headers: ~p", [SignedHeaders]),
 
     RawMethod = wrq:method(Req0),
@@ -187,6 +183,10 @@ do_common_authorization(RequestId, Req0, #context{reqid = ReqId} = Context, Cred
     % TODO: new may eventually need to support ipv6, entailing passing in options.
     Config = mini_s3:new(AccessKey, SecretKey, Host),
 
+    AltHost = mini_s3:get_host_toggleport(Host, Config), 
+    io:format("~nAltHost: ~p", [AltHost]),
+    AltSignedHeaders = [case {K, V} of {"host", _} -> {"host", AltHost}; _ -> {K, V} end || {K, V} <- SignedHeaders],
+
     Url = erlcloud_s3:get_object_url(BucketName, Key, Config),
     io:format("~nerlcloud_s3:get_object_url: ~p", [Url]),
     io:format("~nTODO: this path needs to be escaped ^^^", []),
@@ -213,11 +213,21 @@ do_common_authorization(RequestId, Req0, #context{reqid = ReqId} = Context, Cred
 
             % list_to_binary profiled faster than binary_to_list,
             % so use that for conversion and comparison.
-%Sig0
-            Sig1 = list_to_binary(IncomingSignature),
+            Sig0 = list_to_binary(IncomingSignature),
 
             % compare signatures.  assumes X-Amz-Signature is always on the end?
-            [_, ComparisonSig] = string:split(ComparisonURL, "&X-Amz-Signature=", all);
+            [_, ComparisonSig] = string:split(ComparisonURL, "&X-Amz-Signature=", all),
+
+            Sig1 = case Sig0 of
+                ComparisonSig ->
+                           Sig0;
+                       _ ->
+                AltComparisonURL = mini_s3:s3_url(Method, BucketName, Key, XAmzExpires, AltSignedHeaders, Date, Config),
+                [_, AltComparisonSig] = string:split(AltComparisonURL, "&X-Amz-Signature=", all),
+                AltComparisonSig
+                   end;
+
+
         authorization_header ->
             io:format("~nverification type: authorization_header", []),
 
@@ -241,10 +251,20 @@ do_common_authorization(RequestId, Req0, #context{reqid = ReqId} = Context, Cred
             SigV4Headers = erlcloud_aws:sign_v4(Method, Path, Config, SignedHeaders, <<>>, Region, "s3", QueryParams, Date),
             io:format("~nsigv4headers: ~p", [SigV4Headers]),
 
-            Sig1 = IncomingSignature,
+            Sig0 = IncomingSignature,
 
             (ParseAuth = parse_authorization(proplists:get_value("Authorization", SigV4Headers, ""))) /= err orelse throw({RequestId, Req0, Context}),
-            [_, _, ComparisonSig] = ParseAuth
+            [_, _, ComparisonSig] = ParseAuth,
+
+            Sig1 = case Sig0 of
+                ComparisonSig ->
+                    Sig0;
+                _ ->
+                    AltSigV4Headers = erlcloud_aws:sign_v4(Method, Path, Config, AltSignedHeaders, <<>>, Region, "s3", QueryParams, Date),
+                    (AltParseAuth = parse_authorization(proplists:get_value("Authorization", AltSigV4Headers, ""))) /= err orelse throw({RequestId, Req0, Context}),
+                    [_, _, AltComparisonSig] = AltParseAuth,
+                    AltComparisonSig
+                end
     end,
 
     io:format("~nsig1: ~p", [Sig1         ]),
