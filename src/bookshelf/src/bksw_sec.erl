@@ -128,7 +128,6 @@ do_common_authorization(RequestId, Req0, #context{reqid = ReqId} = Context, Cred
     % handle undefined, err
 
     (Host = wrq:get_req_header("Host", Req0)) /= undefined orelse throw({RequestId, Req0, Context}),
-    io:format("~nhost: ~p", [Host]),
 
     (ParseCred = parse_x_amz_credential(Credential)) /= err orelse throw({RequestId, Req0, Context}),
     [AWSAccessKeyId, CredentialScopeDate, Region | _] = ParseCred,
@@ -148,17 +147,17 @@ do_common_authorization(RequestId, Req0, #context{reqid = ReqId} = Context, Cred
     io:format("~nsecret-access-key: ~p", [SecretKey]),
 
     Headers = process_headers(Headers0),
-    io:format("~nheaders: ~p", [Headers]),
-    io:format("~nENSURE HOST HEADER ^^^", []),
 
     SignedHeaderKeys = parse_x_amz_signed_headers(SignedHeaderKeysString),
     SignedHeaders = get_signed_headers(SignedHeaderKeys, Headers, []),
 
-    io:format("~nsigned headers: ~p", [SignedHeaders]),
-
     RawMethod = wrq:method(Req0),
     Method = list_to_atom(string:to_lower(erlang:atom_to_list(RawMethod))),
     io:format("~nmethod: ~p", [Method]),
+
+io:format("~nscheme: ~p", [wrq:scheme(Req0)]),
+io:format("~napp_root: ~p", [wrq:app_root(Req0)]),
+io:format("~nbase_uri: ~p", [wrq:base_uri(Req0)]),
 
     Path  = wrq:path(Req0),
     io:format("~npath: ~p", [Path]),
@@ -182,10 +181,15 @@ do_common_authorization(RequestId, Req0, #context{reqid = ReqId} = Context, Cred
     % make sure to set the region and service here? or check defaults
     % TODO: new may eventually need to support ipv6, entailing passing in options.
     Config = mini_s3:new(AccessKey, SecretKey, Host),
-
     AltHost = mini_s3:get_host_toggleport(Host, Config), 
-    io:format("~nAltHost: ~p", [AltHost]),
     AltSignedHeaders = [case {K, V} of {"host", _} -> {"host", AltHost}; _ -> {K, V} end || {K, V} <- SignedHeaders],
+
+io:format("~nhost_tokens: ~p", [wrq:host_tokens(Req0)]),
+    io:format("~nhost: ~p", [Host]),
+    io:format("~nAltHost: ~p", [AltHost]),
+    io:format("~nheaders: ~p", [Headers]),
+    io:format("~nsigned headers: ~p", [SignedHeaders]),
+    io:format("~nAltSignedHeaders: ~p", [AltSignedHeaders]),
 
     Url = erlcloud_s3:get_object_url(BucketName, Key, Config),
     io:format("~nerlcloud_s3:get_object_url: ~p", [Url]),
@@ -217,13 +221,16 @@ do_common_authorization(RequestId, Req0, #context{reqid = ReqId} = Context, Cred
 
             % compare signatures.  assumes X-Amz-Signature is always on the end?
             [_, ComparisonSig] = string:split(ComparisonURL, "&X-Amz-Signature=", all),
+            io:format("~ncomparison sig: ~p", [ComparisonSig]),
 
             Sig1 = case Sig0 of
                 ComparisonSig ->
                            Sig0;
                        _ ->
                 AltComparisonURL = mini_s3:s3_url(Method, BucketName, Key, XAmzExpires, AltSignedHeaders, Date, Config),
+                io:format("~nalt comparison url: ~p", [AltComparisonURL]),
                 [_, AltComparisonSig] = string:split(AltComparisonURL, "&X-Amz-Signature=", all),
+                io:format("~nalt comparison sig: ~p", [AltComparisonSig]),
                 AltComparisonSig
                    end;
 
@@ -255,6 +262,7 @@ do_common_authorization(RequestId, Req0, #context{reqid = ReqId} = Context, Cred
 
             (ParseAuth = parse_authorization(proplists:get_value("Authorization", SigV4Headers, ""))) /= err orelse throw({RequestId, Req0, Context}),
             [_, _, ComparisonSig] = ParseAuth,
+            io:format("~ncomparison sig: ~p", [ComparisonSig]),
 
             Sig1 = case Sig0 of
                 ComparisonSig ->
@@ -263,6 +271,7 @@ do_common_authorization(RequestId, Req0, #context{reqid = ReqId} = Context, Cred
                     AltSigV4Headers = erlcloud_aws:sign_v4(Method, Path, Config, AltSignedHeaders, <<>>, Region, "s3", QueryParams, Date),
                     (AltParseAuth = parse_authorization(proplists:get_value("Authorization", AltSigV4Headers, ""))) /= err orelse throw({RequestId, Req0, Context}),
                     [_, _, AltComparisonSig] = AltParseAuth,
+                    io:format("~nalt comparison sig: ~p", [AltComparisonSig]),
                     AltComparisonSig
                 end
     end,
