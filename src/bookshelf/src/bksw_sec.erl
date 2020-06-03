@@ -225,14 +225,16 @@ io:format("~nhost_tokens: ~p", [wrq:host_tokens(Req0)]),
 
             Sig1 = case Sig0 of
                 ComparisonSig ->
-                           Sig0;
-                       _ ->
-                AltComparisonURL = mini_s3:s3_url(Method, BucketName, Key, XAmzExpires, AltSignedHeaders, Date, Config),
-                io:format("~nalt comparison url: ~p", [AltComparisonURL]),
-                [_, AltComparisonSig] = string:split(AltComparisonURL, "&X-Amz-Signature=", all),
-                io:format("~nalt comparison sig: ~p", [AltComparisonSig]),
-                AltComparisonSig
-                   end;
+                    io:format("~nSig1 = case Sig0 (~p) of ComparisonSig (~p) -> Sig1 = Sig0", [Sig0, ComparisonSig]),
+                    Sig0;
+                _ ->
+                    AltComparisonURL = mini_s3:s3_url(Method, BucketName, Key, XAmzExpires, AltSignedHeaders, Date, Config),
+                    io:format("~nalt comparison url: ~p", [AltComparisonURL]),
+                    [_, AltComparisonSig] = string:split(AltComparisonURL, "&X-Amz-Signature=", all),
+                    io:format("~nalt comparison sig: ~p", [AltComparisonSig]),
+                    io:format("~nSig1 = case Sig0 (~p) of AltComparisonSig (~p) -> Sig1 = AltComparisonSig", [Sig0, AltComparisonSig]),
+                    AltComparisonSig
+                end;
 
 
         authorization_header ->
@@ -276,11 +278,13 @@ io:format("~nhost_tokens: ~p", [wrq:host_tokens(Req0)]),
                 end
     end,
 
-    io:format("~nsig1: ~p", [Sig1         ]),
-    io:format("~nsig2: ~p", [ComparisonSig]),
+    io:format("~nSig0: ~p", [Sig0         ]),
+    io:format("~nSig1: ~p", [Sig1         ]),
+    io:format("~nComparisonSig: ~p", [ComparisonSig]),
 
     case Sig1 of
         ComparisonSig ->
+            io:format("~ncase Sig1 (~p) of ComparisonSig (~p)...", [Sig1, ComparisonSig]),
             case is_expired(Date, XAmzExpires) of
                 true ->
                     io:format("~nexpired signature", []),
@@ -304,7 +308,8 @@ io:format("~nhost_tokens: ~p", [wrq:host_tokens(Req0)]),
                                                        ComparisonURL, Req0, Context)
                     end
             end;
-        _ ->
+        _X ->
+            io:format("~ncase Sig1 (~p) of _X (~p)...", [Sig1, _X]),
             io:format("~nbksw_sec: do_signed_url_authorization failed", []),
             io:format("~n--------------------------------------------", []),
             encode_access_denied_error_response(RequestId, Req0, Context)
