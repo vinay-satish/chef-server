@@ -116,9 +116,9 @@ start_bookshelf() ->
     %% see messages in common test output.
     lager_common_test_backend:bounce(error),
 
-case application:ensure_all_started(ibrowse) of
-    {ok, _a} ->
-        {ok, _a}
+_ = case application:ensure_all_started(ibrowse) of
+    {ok, _} ->
+        ok
 end,
 
     case application:ensure_all_started(bookshelf) of
