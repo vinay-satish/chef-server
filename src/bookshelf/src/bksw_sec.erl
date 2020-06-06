@@ -42,19 +42,18 @@ is_authorized(Req0, #context{} = Context) ->
     {RequestId, Req1} = bksw_req:with_amz_request_id(Req0),
     case proplists:get_value('Authorization', Headers, undefined) of
         undefined ->
-            do_signed_url_authorization(RequestId, Req1, Context, Headers);
+            presigned_auth(RequestId, Req1, Context, Headers);
         IncomingAuth ->
-            io:format("~ndoing standard authorization", []),
-            do_standard_authorization(RequestId, IncomingAuth, Req1, Context, Headers)
+            header_auth(RequestId, IncomingAuth, Req1, Context, Headers)
     end.
 %-endif.
 
 % presigned url verification
 % https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-query-string-auth.html
-do_signed_url_authorization(RequestId, Req0, Context, Headers0) ->
+presigned_auth(RequestId, Req0, Context, Headers0) ->
 
 %    %io:format("~n~n--------------------------------", []),
-    io:format("~nin bksw_sec do_signed_url_authorization", []),
+    io:format("~nin bksw_sec presigned_auth", []),
 
     QueryParams = wrq:req_qs(Req0),
     io:format("~nquery string: ~p", [QueryParams]),
@@ -78,16 +77,20 @@ do_signed_url_authorization(RequestId, Req0, Context, Headers0) ->
     XAmzExpiresString = wrq:get_qs_value("X-Amz-Expires", "", Req0),
     io:format("~nx-amz-expires: ~p", [XAmzExpiresString]),
 
-    io:format("~ncalling do_common_authorization", []),
-    do_common_authorization(RequestId, Req0, Context, Credential, XAmzDate, SignedHeaderKeysString, IncomingSignature, XAmzExpiresString, Headers0, presigned_url).
+    io:format("~ncalling common_auth", []),
+    common_auth(RequestId, Req0, Context, Credential, XAmzDate, SignedHeaderKeysString, IncomingSignature, XAmzExpiresString, Headers0, presigned_url).
 
 % https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-auth-using-authorization-header.html
-do_standard_authorization(RequestId, IncomingAuth, Req0, Context, Headers0) ->
-    try
-    io:format("~nDOING STANDARD AUTHORIZATION", []),
+header_auth(RequestId, IncomingAuth, Req0, Context, Headers0) ->
+    io:format("~nin header_auth", []),
     io:format("~nIncomingAuth: ~p", [IncomingAuth]),
 
-    (ParseAuth = parse_authorization(IncomingAuth)) /= err orelse throw({RequestId, Req0, Context}),
+    try
+        (ParseAuth = parse_authorization(IncomingAuth)) /= err orelse throw({RequestId, Req0, Context})
+    catch
+        _ -> encode_access_denied_error_response(RequestId, Req0, Context)
+    end,
+
     [Credential, SignedHeaderKeysString, IncomingSignature] = ParseAuth,
     io:format("~nAuthorization:~n~p~n~p~n~p", [Credential, SignedHeaderKeysString, IncomingSignature]),
 %    [AWSAccessKeyId, CredentialScopeDate | _]  = parse_x_amz_credential(Credential),
@@ -97,12 +100,9 @@ do_standard_authorization(RequestId, IncomingAuth, Req0, Context, Headers0) ->
     XAmzDate = wrq:get_req_header("x-amz-date", Req0),
     io:format("~nXAmzDate: ~p", [XAmzDate]),
 
-    io:format("~ncalling do_common_authorization", []),
-    do_common_authorization(RequestId, Req0, Context, Credential, XAmzDate, SignedHeaderKeysString, IncomingSignature, "300", Headers0, authorization_header)
+    io:format("~ncalling common_auth", []),
+    common_auth(RequestId, Req0, Context, Credential, XAmzDate, SignedHeaderKeysString, IncomingSignature, "300", Headers0, authorization_header).
 
-    catch
-        {RequestId, Req0, Context} -> encode_access_denied_error_response(RequestId, Req0, Context)
-    end.
 
 %%-ifdef(TESTxxx).
 %%% tests sometimes use the following credentials:
@@ -122,7 +122,7 @@ getkeys(_, Context) ->
 %    {bksw_conf:access_key_id(Context), bksw_conf:secret_access_key(Context)}.
 %%-endif.
 
-do_common_authorization(RequestId, Req0, #context{reqid = ReqId} = Context, Credential, XAmzDate, SignedHeaderKeysString, IncomingSignature, XAmzExpiresString, Headers0, VerificationType) ->
+common_auth(RequestId, Req0, #context{reqid = ReqId} = Context, Credential, XAmzDate, SignedHeaderKeysString, IncomingSignature, XAmzExpiresString, Headers0, VerificationType) ->
     try
 
     % handle undefined, err
@@ -300,11 +300,11 @@ io:format("~nhost_tokens: ~p", [wrq:host_tokens(Req0)]),
                         true ->
                             MaxAge = "max-age=" ++ XAmzExpiresString,
                             Req1 = wrq:set_resp_header("Cache-Control", MaxAge, Req0),
-                            io:format("~ndo_signed_url_authorization succeeded", []),
+                            io:format("~npresigned_auth succeeded", []),
                             io:format("~n-------------------------------------", []),
                             {true, Req1, Context};
                         false ->
-                            io:format("~ndo_signed_url_authorization failed", []),
+                            io:format("~npresigned_auth failed", []),
                             io:format("~n----------------------------------", []),
                             ?LOG_DEBUG("req_id=~p signing error for ~p", [ReqId, Path]),
                             encode_sign_error_response(AWSAccessKeyId, IncomingSignature, RequestId,
@@ -313,7 +313,7 @@ io:format("~nhost_tokens: ~p", [wrq:host_tokens(Req0)]),
             end;
         _X ->
             io:format("~ncase Sig1 (~p) of _X (~p)...", [Sig1, _X]),
-            io:format("~nbksw_sec: do_signed_url_authorization failed", []),
+            io:format("~nbksw_sec: presigned_auth failed", []),
             io:format("~n--------------------------------------------", []),
             encode_access_denied_error_response(RequestId, Req0, Context)
     end
@@ -379,11 +379,11 @@ io:format("~nhost_tokens: ~p", [wrq:host_tokens(Req0)]),
 %                        true ->
 %                            MaxAge = "max-age=" ++ integer_to_list(ExpireDiff),
 %                            Req1 = wrq:set_resp_header("Cache-Control", MaxAge, Req0),
-%%io:format("~ndo_signed_url_authorization succeeded", []),
+%%io:format("~npresigned_auth succeeded", []),
 %%io:format("~n--------------------------------", []),
 %                            {true, Req1, Context};
 %                        false ->
-%%io:format("~ndo_signed_url_authorization failed", []),
+%%io:format("~npresigned_auth failed", []),
 %%io:format("~n--------------------------------", []),
 %                            ?LOG_DEBUG("req_id=~p signing error for ~p", [ReqId, Path]),
 %                            encode_sign_error_response(AWSAccessKeyId, IncomingSignature, RequestId,
