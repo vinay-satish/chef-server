@@ -314,14 +314,14 @@ bucket_basic(doc) ->
 bucket_basic(suite) ->
     [];
 bucket_basic(Config) when is_list(Config) ->
-io:format("~nin bkswt_api_SUITE:bucket_basic", []),
+?debugFmt("~nin bkswt_api_SUITE:bucket_basic", []),
     %S3Conf = proplists:get_value(s3_conf, Config),
 S3Conf0 = proplists:get_value(s3_conf, Config),
 S3Conf = S3Conf0#aws_config{access_key_id = ?accesskeyid, secret_access_key = ?secretaccesskey},
-io:format("~nConfig: ~0p", [Config]),
+?debugFmt("~nConfig: ~0p", [Config]),
     BucketName = "testbucket",
 Z = mini_s3:create_bucket(BucketName, public_read_write, none, S3Conf),
-io:format("~ncreate_bucket result: ~p", [Z]),
+?debugFmt("~ncreate_bucket result: ~p", [Z]),
     ?assertEqual(ok, Z),
     ?assert(bucket_exists(BucketName, S3Conf)),
 
@@ -376,22 +376,22 @@ bucket_encoding(doc) ->
 bucket_encoding(suite) ->
     [];
 bucket_encoding(Config) ->
-io:format("~nin bkswt_api_SUITE:bucket_encoding", []),
-%io:format("~nConfig: ~0p", [Config]),
+?debugFmt("~nin bkswt_api_SUITE:bucket_encoding", []),
+%?debugFmt("~nConfig: ~0p", [Config]),
     %S3Conf = proplists:get_value(s3_conf, Config),
 S3Conf0 = proplists:get_value(s3_conf, Config),
 S3Conf = S3Conf0#aws_config{access_key_id = ?accesskeyid, secret_access_key = ?secretaccesskey},
-io:format("~nS3Conf: ~0p", [S3Conf]),
+?debugFmt("~nS3Conf: ~0p", [S3Conf]),
 
     OddBucket = "a bucket",
     OddBucketEnc = OddBucket, %"a%20bucket",
 Z = mini_s3:create_bucket(OddBucketEnc, public_read_write, none, S3Conf),
-io:format("~nbucket_encoding create_bucket result: ~p", [Z]),
-io:format("~nbucket_encoding bucket_exists: ~p", [bucket_exists(OddBucket, S3Conf)]),
+?debugFmt("~nbucket_encoding create_bucket result: ~p", [Z]),
+?debugFmt("~nbucket_encoding bucket_exists: ~p", [bucket_exists(OddBucket, S3Conf)]),
     ?assert(bucket_exists(OddBucket, S3Conf)),
 
     OddResult = mini_s3:list_objects(OddBucketEnc, [], S3Conf),
-io:format("~nOddResult: ~p", [OddResult]),
+?debugFmt("~nOddResult: ~p", [OddResult]),
     ?assertEqual(OddBucket, ?config(name, OddResult)),
     ?assertEqual([], ?config(contents, OddResult)),
     mini_s3:delete_bucket(OddBucketEnc, S3Conf).
@@ -401,7 +401,7 @@ head_object(doc) ->
 head_object(suite) ->
     [];
 head_object(Config) when is_list(Config) ->
-io:format("~nin bkswt_api_SUITE:head_object", []),
+?debugFmt("~nin bkswt_api_SUITE:head_object", []),
     %S3Conf = proplists:get_value(s3_conf, Config),
 S3Conf0 = proplists:get_value(s3_conf, Config),
 S3Conf = S3Conf0#aws_config{access_key_id = ?accesskeyid, secret_access_key = ?secretaccesskey},
@@ -436,12 +436,12 @@ put_object(doc) ->
 put_object(suite) ->
     [];
 put_object(Config) when is_list(Config) ->
-io:format("~nin bkswt_api_SUITE:put_object", []),
-%io:format("~nConfig: ~0p", [Config]),
+?debugFmt("~nin bkswt_api_SUITE:put_object", []),
+%?debugFmt("~nConfig: ~0p", [Config]),
     %S3Conf = proplists:get_value(s3_conf, Config),
 S3Conf0 = proplists:get_value(s3_conf, Config),
 S3Conf = S3Conf0#aws_config{access_key_id = ?accesskeyid, secret_access_key = ?secretaccesskey},
-io:format("~nS3Conf: ~p", [S3Conf]),
+?debugFmt("~nS3Conf: ~p", [S3Conf]),
     Bucket = random_bucket(),
     ensure_bucket(Bucket, S3Conf),
 
@@ -483,33 +483,33 @@ cache_control(doc) ->
 cache_control(suite) ->
     [];
 cache_control(Config) when is_list(Config) ->
-%io:format("~nin bkswt_api_SUITE:cache_control", []),
-%io:format("~nConfig: ~0p", [Config]),
+%?debugFmt("~nin bkswt_api_SUITE:cache_control", []),
+%?debugFmt("~nConfig: ~0p", [Config]),
     %S3Conf = proplists:get_value(s3_conf, Config),
 S3Conf0 = proplists:get_value(s3_conf, Config),
 S3Conf = S3Conf0#aws_config{access_key_id = ?accesskeyid, secret_access_key = ?secretaccesskey},
-%io:format("~nS3Conf: ~p", [S3Conf]),
+%?debugFmt("~nS3Conf: ~p", [S3Conf]),
     Bucket = random_bucket(),
-%io:format("~ncalling ensure_bucket (should break here)", []),
+%?debugFmt("~ncalling ensure_bucket (should break here)", []),
     ensure_bucket(Bucket, S3Conf),
 
     NameExists = random_path(),
     NameMissing = random_path(),
 
     Data = "TestData\nMore test data",
-io:format("~nbkswt_api_SUITE:cache_control - ~nBucket: ~p~nName: ~p~nData: ~p", [Bucket, NameExists, Data]),
+?debugFmt("~nbkswt_api_SUITE:cache_control - ~nBucket: ~p~nName: ~p~nData: ~p", [Bucket, NameExists, Data]),
     mini_s3:put_object(Bucket, NameExists, Data, [], [], S3Conf),
 
     SignedUrl = mini_s3:s3_url('get', Bucket, NameMissing, 1000, [], S3Conf),
-io:format("~nbkswt_api_SUITE:cache_control - SignedUrl = : ~p", [SignedUrl]),
+?debugFmt("~nbkswt_api_SUITE:cache_control - SignedUrl = : ~p", [SignedUrl]),
     {ok, Result} = httpc:request(erlang:binary_to_list(SignedUrl)),
     {{_, 404, _}, HeadersMissing, _} = Result,
-io:format("~nbkswt_api_SUITE:cache_control - ~nHeadersMissing: ~p", [HeadersMissing]),
+?debugFmt("~nbkswt_api_SUITE:cache_control - ~nHeadersMissing: ~p", [HeadersMissing]),
 
     SignedUrl2 = mini_s3:s3_url('get', Bucket, NameExists, 1000, [], S3Conf),
     {ok, Result2} = httpc:request(erlang:binary_to_list(SignedUrl2)),
     {{_, 200, _}, HeadersExists, _} = Result2,
-io:format("~nbkswt_api_SUITE:cache_control - ~nHeadersExists: ~p", [HeadersExists]),
+?debugFmt("~nbkswt_api_SUITE:cache_control - ~nHeadersExists: ~p", [HeadersExists]),
 
     ?assertMatch(false, has_header("Cache-Control", HeadersMissing)),
     ?assertMatch(true, has_header("Cache-Control", HeadersExists)).
@@ -519,18 +519,18 @@ object_roundtrip(doc) ->
 object_roundtrip(suite) ->
     [];
 object_roundtrip(Config) when is_list(Config) ->
-%io:format("~nin bkswt_api_SUITE:object_roundtrip", []),
-%io:format("~nConfig: ~0p", [Config]),
+%?debugFmt("~nin bkswt_api_SUITE:object_roundtrip", []),
+%?debugFmt("~nConfig: ~0p", [Config]),
     %S3Conf = proplists:get_value(s3_conf, Config),
 S3Conf0 = proplists:get_value(s3_conf, Config),
 S3Conf = S3Conf0#aws_config{access_key_id = ?accesskeyid, secret_access_key = ?secretaccesskey},
-%io:format("~nS3Conf: ~p", [S3Conf]),
+%?debugFmt("~nS3Conf: ~p", [S3Conf]),
     Bucket = random_bucket(),
-%io:format("~ncalling ensure bucket (will probably break here)", []),
+%?debugFmt("~ncalling ensure bucket (will probably break here)", []),
     ensure_bucket(Bucket,S3Conf),
     Name = random_path(),
     Data = erlang:iolist_to_binary(test_data_text(128*1024)),
-io:format("~nbkswt_api_SUITE:object_roundtrip - ~nBucket: ~p~nName: ~p~nData: ~p", [Bucket, Name, "truncated"]),
+?debugFmt("~nbkswt_api_SUITE:object_roundtrip - ~nBucket: ~p~nName: ~p~nData: ~p", [Bucket, Name, "truncated"]),
     mini_s3:put_object(Bucket, Name, Data, [], [], S3Conf),
     Result = mini_s3:get_object(Bucket, Name, [], S3Conf),
     DataRoundtrip = proplists:get_value(content, Result),
@@ -541,18 +541,18 @@ object_delete(doc) ->
 object_delete(suite) ->
     [];
 object_delete(Config) when is_list(Config) ->
-%io:format("~nin bkswt_api_SUITE:object_delete", []),
-%io:format("~nConfig: ~0p", [Config]),
+%?debugFmt("~nin bkswt_api_SUITE:object_delete", []),
+%?debugFmt("~nConfig: ~0p", [Config]),
     %S3Conf = proplists:get_value(s3_conf, Config),
 S3Conf0 = proplists:get_value(s3_conf, Config),
 S3Conf = S3Conf0#aws_config{access_key_id = ?accesskeyid, secret_access_key = ?secretaccesskey},
 
     Bucket = random_bucket(),
-%io:format("~ncalling ensure_bucket (should break here)", []),
+%?debugFmt("~ncalling ensure_bucket (should break here)", []),
     ensure_bucket(Bucket,S3Conf),
     Name = random_path(),
     Data = "TestData\nMore test data",
-io:format("~nbkswt_api_SUITE:object_delete - ~nBucket: ~p~nName: ~p~nData: ~p", [Bucket, Name, Data]),
+?debugFmt("~nbkswt_api_SUITE:object_delete - ~nBucket: ~p~nName: ~p~nData: ~p", [Bucket, Name, Data]),
     mini_s3:put_object(Bucket, Name, Data, [], [], S3Conf),
     ?assert(file_exists(Bucket, Name, S3Conf)),
 
@@ -576,7 +576,7 @@ S3Conf = S3Conf0#aws_config{access_key_id = ?accesskeyid, secret_access_key = ?s
     %% Add a file
     Name = random_path(),
     Data = "TestData\nMore test data",
-io:format("~nbkswt_api_SUITE:bucket_delete - ~nBucket: ~p~nName: ~p~nData: ~p", [Bucket, Name, Data]),
+?debugFmt("~nbkswt_api_SUITE:bucket_delete - ~nBucket: ~p~nName: ~p~nData: ~p", [Bucket, Name, Data]),
     mini_s3:put_object(Bucket, Name, Data, [], [], S3Conf),
     ?assert(file_exists(Bucket, Name, S3Conf)),
 
@@ -597,8 +597,8 @@ sec_fail(doc) ->
 sec_fail(suite) ->
     [];
 sec_fail(Config) when is_list(Config) ->
-io:format("~nin bkswt_api_SUITE:sec_fail", []),
-%io:format("~nConfig: ~0p", [Config]),
+?debugFmt("~nin bkswt_api_SUITE:sec_fail", []),
+%?debugFmt("~nConfig: ~0p", [Config]),
 %    BogusS3Conf = {config,
 %                   "http://127.0.0.1:4321",
 %                   <<"nopenope">>,
@@ -614,13 +614,13 @@ io:format("~nin bkswt_api_SUITE:sec_fail", []),
 BogusS3Conf = mini_s3:new(<<"nopenope">>, <<"evenmorenope">>, "http://127.0.0.1:4321", path, []),
     Bucket = "thisshouldfail",
 % this should work when auth is turned back on?
-io:format("~ncalling create_bucket with incompatible config (should be an aws_config) - should fail", []),
+?debugFmt("~ncalling create_bucket with incompatible config (should be an aws_config) - should fail", []),
     ?assertError({aws_error, {http_error, 403, _, _}},
                  mini_s3:create_bucket(Bucket, public_read_write, none, BogusS3Conf)),
     %% also verify that unsigned URL requests don't crash
     {ok, Status, _H, Body} = ibrowse:send_req("http://127.0.0.1:4321/foobar", [],
                                               get),
-io:format("~nStatus: ~p~n_H: ~p~nBody: ~p", [Status, _H, Body]),
+?debugFmt("~nStatus: ~p~n_H: ~p~nBody: ~p", [Status, _H, Body]),
     ?assertEqual("403", Status),
     ?assert(string:str(Body, "<Message>Access Denied</Message>") > 0).
 
@@ -629,14 +629,14 @@ signed_url(doc) ->
 signed_url(suite) ->
     [];
 signed_url(Config) when is_list(Config) ->
-io:format("~nin bkswt_api_SUITE:signed_url", []),
-%io:format("~nConfig: ~0p", [Config]),
+?debugFmt("~nin bkswt_api_SUITE:signed_url", []),
+%?debugFmt("~nConfig: ~0p", [Config]),
     %S3Conf = proplists:get_value(s3_conf, Config),
 S3Conf0 = proplists:get_value(s3_conf, Config),
 S3Conf = S3Conf0#aws_config{access_key_id = ?accesskeyid, secret_access_key = ?secretaccesskey},
     Bucket = random_binary(),
     ensure_bucket(Bucket, S3Conf),
-io:format("~ncalling ensure_bucket (should break here)", []),
+?debugFmt("~ncalling ensure_bucket (should break here)", []),
     Content = "<x>Super Foo</x>",
     Headers = [{"content-type", "text/xml"},
                {"content-md5",
@@ -662,13 +662,13 @@ signed_url_fail(doc) ->
 signed_url_fail(suite) ->
     [];
 signed_url_fail(Config) when is_list(Config) ->
-io:format("~nin bkswt_api_SUITE:signed_url_fail", []),
-%io:format("~nConfig: ~0p", [Config]),
+?debugFmt("~nin bkswt_api_SUITE:signed_url_fail", []),
+%?debugFmt("~nConfig: ~0p", [Config]),
     %S3Conf = proplists:get_value(s3_conf, Config),
 S3Conf0 = proplists:get_value(s3_conf, Config),
 S3Conf = S3Conf0#aws_config{access_key_id = ?accesskeyid, secret_access_key = ?secretaccesskey},
     Bucket = random_binary(),
-io:format("~ncalling ensure_bucket (should break here)", []),
+?debugFmt("~ncalling ensure_bucket (should break here)", []),
     ensure_bucket(Bucket, S3Conf),
 
     Content = "<x>Super Foo</x>",
@@ -688,14 +688,14 @@ at_the_same_time(doc) ->
     ["should handle concurrent reads and writes"];
 at_the_same_time(suite) -> [];
 at_the_same_time(Config) when is_list(Config) ->
-%io:format("~nin bkswt_api_SUITE:at_the_same_time", []),
-%io:format("~nConfig: ~0p", [Config]),
+%?debugFmt("~nin bkswt_api_SUITE:at_the_same_time", []),
+%?debugFmt("~nConfig: ~0p", [Config]),
     %S3Conf = proplists:get_value(s3_conf, Config),
 S3Conf0 = proplists:get_value(s3_conf, Config),
 S3Conf = S3Conf0#aws_config{access_key_id = ?accesskeyid, secret_access_key = ?secretaccesskey},
     Bucket = "bukkit",
 
-io:format("~ncalling ensure_bucket (should break here)", []),
+?debugFmt("~ncalling ensure_bucket (should break here)", []),
     ensure_bucket(Bucket, S3Conf),
     BucketContents = mini_s3:list_objects(Bucket, [], S3Conf),
     ?assertEqual(Bucket, proplists:get_value(name, BucketContents)),
@@ -704,7 +704,7 @@ io:format("~ncalling ensure_bucket (should break here)", []),
     BigData = list_to_binary(lists:duplicate(200000, 2)),
     Key = filename:join(random_binary(), random_binary()),
     error_logger:info_report({at_the_same_time, key, Key}),
-io:format("~nbkswt_api_SUITE:at_the_same_time -~n~p~n~p~n~p", [Bucket, Key, "truncated"]), %BigData]),
+?debugFmt("~nbkswt_api_SUITE:at_the_same_time -~n~p~n~p~n~p", [Bucket, Key, "truncated"]), %BigData]),
     mini_s3:put_object(Bucket, Key, BigData, [], [], S3Conf),
     DoOp = fun(read) ->
                    Res = mini_s3:get_object(Bucket, Key, [], S3Conf),
@@ -729,8 +729,8 @@ upgrade_from_v0(doc) ->
     ["Upgrades from version 0 disk format to current version"];
 upgrade_from_v0(suite) -> [];
 upgrade_from_v0(Config) ->
-io:format("~nin bkswt_api_SUITE:upgrade_from_v0", []),
-%io:format("~nConfig: ~0p", [Config]),
+?debugFmt("~nin bkswt_api_SUITE:upgrade_from_v0", []),
+%?debugFmt("~nConfig: ~0p", [Config]),
     ShouldExist = [
                    {"bucket-1", "xjbrpodcionabrzhikgliowdzvbvbc/kqvfgzhnlkizzvbidsxwavrktxcasx"},
                    {"bucket-1", "zrcsghibdgwjghkqsdajycrjwitntu/ahnsvorjeauuwusthkdunsslzffkfn"},
@@ -771,11 +771,11 @@ S3Conf = S3Conf0#aws_config{access_key_id = ?accesskeyid, secret_access_key = ?s
     [ mini_s3:get_object(Bucket, Key, [], S3Conf) || {Bucket, Key} <- ShouldExist ],
     ok.
 
-%io:format("~nin bkswt_api_SUITE:bucket_basic", []),
-%io:format("~nConfig: ~0p", [Config]),
-%io:format("~ncreate_bucket result: ~p", [Z]),
-%io:format("~nS3Conf: ~p", [S3Conf]),
-%io:format("~ncalling ensure_bucket (should break here)", []),
+%?debugFmt("~nin bkswt_api_SUITE:bucket_basic", []),
+%?debugFmt("~nConfig: ~0p", [Config]),
+%?debugFmt("~ncreate_bucket result: ~p", [Z]),
+%?debugFmt("~nS3Conf: ~p", [S3Conf]),
+%?debugFmt("~ncalling ensure_bucket (should break here)", []),
 
 %%====================================================================
 %% Utility Functions
@@ -806,24 +806,24 @@ bucket_list(S3Conf0) ->
     %S3Conf = proplists:get_value(s3_conf, Config),
 %S3Conf0 = proplists:get_value(s3_conf, Config),
 S3Conf = S3Conf0#aws_config{access_key_id = ?accesskeyid, secret_access_key = ?secretaccesskey},
-io:format("~nin bkswt_api_SUITE:bucket_list", []),
-%io:format("~nS3Conf: ~0p", [S3Conf]),
+?debugFmt("~nin bkswt_api_SUITE:bucket_list", []),
+%?debugFmt("~nS3Conf: ~0p", [S3Conf]),
 Z = mini_s3:list_buckets(S3Conf),
-io:format("~nlist_buckets result: ~p", [Z]),
+?debugFmt("~nlist_buckets result: ~p", [Z]),
 [{buckets, Details}] = Z,
 %    [{buckets, Details}] = mini_s3:list_buckets(S3Conf),
     lists:map(fun(Opts) -> proplists:get_value(name, Opts) end, Details).
 
 bucket_exists(Name, S3Conf) ->
-io:format("~nin bkswt_api_SUITE:bucket_exists", []),
+?debugFmt("~nin bkswt_api_SUITE:bucket_exists", []),
     BucketNames = bucket_list(S3Conf),
-io:format("~nlooking for ~p in ~p", [Name, BucketNames]),
+?debugFmt("~nlooking for ~p in ~p", [Name, BucketNames]),
     %X = lists:member(Name, BucketNames),
     % http_uri deprecated since OTP 23. Use the module uri_string for 21+
     % what's with the orelse clause here? revisit this (bucket_list prob needs to return url-decoded).
     X = lists:member(Name, BucketNames), % orelse lists:member(http_uri:encode(Name), BucketNames),
 %X = [] /= [true || BucketName <- BucketNames, Name <- [http_uri:decode(BucketName)]],
-io:format("~nbucket_exists result: ~p", [X]),
+?debugFmt("~nbucket_exists result: ~p", [X]),
     X.
 
 %bucket_exists(Name, S3Conf) ->
@@ -833,21 +833,21 @@ io:format("~nbucket_exists result: ~p", [X]),
 %[] /= [true || List <- ListOfLists, true <- lists:member({name, Name}, List)].
 
 ensure_bucket(Bucket, Config) ->
-io:format("~nin bkswt_api_SUITE:ensure_bucket", []),
-io:format("~nBucket: ~p", [Bucket]),
-%io:format("~nConfig: ~0p", [Config]),
+?debugFmt("~nin bkswt_api_SUITE:ensure_bucket", []),
+?debugFmt("~nBucket: ~p", [Bucket]),
+%?debugFmt("~nConfig: ~0p", [Config]),
     case bucket_exists(Bucket, Config) of
         true ->
-io:format("~nbucket exists", []),
+?debugFmt("~nbucket exists", []),
 Z = mini_s3:delete_bucket(Bucket, Config),
-io:format("~nensure_bucket delete_bucket result: ~p", [Z]),
+?debugFmt("~nensure_bucket delete_bucket result: ~p", [Z]),
             ?assertEqual(ok, Z);
         _ -> 
-io:format("~nbucket doesnt exist", []),
+?debugFmt("~nbucket doesnt exist", []),
 ok
     end,
 X = mini_s3:create_bucket(Bucket, public_read_write, none, Config),
-io:format("~nensure_bucket create_bucket result: ~p", [X]),
+?debugFmt("~nensure_bucket create_bucket result: ~p", [X]),
     ?assertEqual(ok, X).
 
 file_exists(Bucket, Name, S3Conf0) ->

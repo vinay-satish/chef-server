@@ -74,5 +74,5 @@ get_object_and_bucket(Rq0) ->
             {ok, bksw_io_names:decode(bksw_util:to_binary(Bucket)),
              bksw_util:to_binary(filename:join(Path))};
 % not sure what was originally on the line below - look it up
-_ -> error %io:format("~nbksw_util:get_object_and_bucket failed !!!!!!!!!!!")
+_ -> error %?debugFmt("~nbksw_util:get_object_and_bucket failed !!!!!!!!!!!")
     end.
