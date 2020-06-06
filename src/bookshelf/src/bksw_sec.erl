@@ -23,7 +23,9 @@
 -include_lib("eunit/include/eunit.hrl").
 
 -export([is_authorized/2]).
--compile(export_all).
+-ifdef(TEST).
+-compile([export_all, nowarn_export_all]).
+-endif.
 
 -define(SECONDS_AT_EPOCH, 62167219200).
 -include("internal.hrl").
@@ -31,10 +33,6 @@
 %%===================================================================
 %% API functions
 %%===================================================================
-%-ifdef(TEST).
-%is_authorized(Req, Context) ->
-%    {true, Req, Context}.
-%-else.
 is_authorized(Req0, #context{auth_check_disabled=true} = Context) ->
     {true, Req0, Context};
 is_authorized(Req0, #context{} = Context) ->
@@ -46,7 +44,6 @@ is_authorized(Req0, #context{} = Context) ->
         IncomingAuth ->
             header_auth(RequestId, IncomingAuth, Req1, Context, Headers)
     end.
-%-endif.
 
 % presigned url verification
 % https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-query-string-auth.html
@@ -86,22 +83,22 @@ header_auth(RequestId, IncomingAuth, Req0, Context, Headers0) ->
     ?debugFmt("~nIncomingAuth: ~p", [IncomingAuth]),
 
     try
-        (ParseAuth = parse_authorization(IncomingAuth)) /= err orelse throw({RequestId, Req0, Context})
+        (ParseAuth = parse_authorization(IncomingAuth)) /= err orelse throw({RequestId, Req0, Context}),
+        [Credential, SignedHeaderKeysString, IncomingSignature] = ParseAuth,
+        ?debugFmt("~nAuthorization:~n~p~n~p~n~p", [Credential, SignedHeaderKeysString, IncomingSignature]),
+    %    [AWSAccessKeyId, CredentialScopeDate | _]  = parse_x_amz_credential(Credential),
+    %    %?debugFmt("~naws-access-key-id: ~p~nCredentialScopeDate: ~p", [AWSAccessKeyId, CredentialScopeDate]),
+
+        % can be undefined
+        XAmzDate = wrq:get_req_header("x-amz-date", Req0),
+        ?debugFmt("~nXAmzDate: ~p", [XAmzDate]),
+
+        ?debugFmt("~ncalling common_auth", []),
+        common_auth(RequestId, Req0, Context, Credential, XAmzDate, SignedHeaderKeysString, IncomingSignature, "300", Headers0, authorization_header)
     catch
         _ -> encode_access_denied_error_response(RequestId, Req0, Context)
-    end,
+    end.
 
-    [Credential, SignedHeaderKeysString, IncomingSignature] = ParseAuth,
-    ?debugFmt("~nAuthorization:~n~p~n~p~n~p", [Credential, SignedHeaderKeysString, IncomingSignature]),
-%    [AWSAccessKeyId, CredentialScopeDate | _]  = parse_x_amz_credential(Credential),
-%    %?debugFmt("~naws-access-key-id: ~p~nCredentialScopeDate: ~p", [AWSAccessKeyId, CredentialScopeDate]),
-
-    % can be undefined
-    XAmzDate = wrq:get_req_header("x-amz-date", Req0),
-    ?debugFmt("~nXAmzDate: ~p", [XAmzDate]),
-
-    ?debugFmt("~ncalling common_auth", []),
-    common_auth(RequestId, Req0, Context, Credential, XAmzDate, SignedHeaderKeysString, IncomingSignature, "300", Headers0, authorization_header).
 
 
 %%-ifdef(TESTxxx).
@@ -202,7 +199,7 @@ common_auth(RequestId, Req0, #context{reqid = ReqId} = Context, Credential, XAmz
 
     XAmzExpires = list_to_integer(XAmzExpiresString),
 
-    case VerificationType of
+    Sig1 = case VerificationType of
         presigned_url ->
             ?debugFmt("~nverification type: presigned_url", []),
 
@@ -223,7 +220,7 @@ common_auth(RequestId, Req0, #context{reqid = ReqId} = Context, Credential, XAmz
             [_, ComparisonSig] = string:split(ComparisonURL, "&X-Amz-Signature=", all),
             ?debugFmt("~ncomparison sig: ~p", [ComparisonSig]),
 
-            Sig1 = case IncomingSig of
+            case IncomingSig of
                 ComparisonSig ->
                     ?debugFmt("~nSig1 = case IncomingSig (~p) of ComparisonSig (~p) -> Sig1 = IncomingSig", [IncomingSig, ComparisonSig]),
                     AltComparisonSig = "not computed",
@@ -235,7 +232,7 @@ common_auth(RequestId, Req0, #context{reqid = ReqId} = Context, Credential, XAmz
                     ?debugFmt("~nalt comparison sig: ~p", [AltComparisonSig]),
                     ?debugFmt("~nSig1 = case IncomingSig (~p) of AltComparisonSig (~p) -> Sig1 = AltComparisonSig", [IncomingSig, AltComparisonSig]),
                     AltComparisonSig
-                end;
+            end;
 
 
         authorization_header ->
@@ -267,7 +264,7 @@ common_auth(RequestId, Req0, #context{reqid = ReqId} = Context, Credential, XAmz
             [_, _, ComparisonSig] = ParseAuth,
             ?debugFmt("~ncomparison sig: ~p", [ComparisonSig]),
 
-            Sig1 = case IncomingSig of
+            case IncomingSig of
                 ComparisonSig ->
                     AltComparisonSig = "not computed",
                     IncomingSig;
@@ -312,7 +309,7 @@ common_auth(RequestId, Req0, #context{reqid = ReqId} = Context, Credential, XAmz
                     end
             end;
         X ->
-            ?debugFmt("~ncase Sig1 (~p) of X (~p)...", [Sig1, X]),
+            ?debugFmt("~ncase IncomingSig (~p) of X (~p)...", [IncomingSig, X]),
             ?debugFmt("~nbksw_sec: presigned_auth failed", []),
             ?debugFmt("~n--------------------------------------------", []),
             encode_access_denied_error_response(RequestId, Req0, Context)
