@@ -103,14 +103,14 @@ generate_presigned_url_uses_configured_s3_url_test_() ->
                                                 {ok, InternalS3Url} = application:get_env(chef_objects, s3_url),
                                                 {ok, ExternalS3Url} = application:get_env(chef_objects, s3_external_url),
                                                 F = url_function(InternalS3Url, ExternalS3Url),
-                                                io:format("F = ~p", [F]),
+                                                ?debugFmt("F = ~p", [F]),
                                                 S3Url = F(Config),
-                                                io:format("S3Url = ~p", [S3Url]),
+                                                ?debugFmt("S3Url = ~p", [S3Url]),
                                                 ?assertEqual(ExpectUrl, S3Url),
                                                 stub_s3_url_response
                                         end)
                     end,
-    [{"Calls mini_s3:s3_url with HostHeaderUrl when "
+    [{"Calls mini_s3:s3_url with HostHeaderUrl when"
       "external s3 url is set to host_header",
       {foreach,
        fun() ->
@@ -148,7 +148,7 @@ generate_presigned_url_uses_configured_s3_url_test_() ->
                       end}]
         end]}},
 
-     {"Calls mini_s3:s3_url with InternalS3Url when "
+     {"Calls mini_s3:s3_url with InternalS3Url when"
       "external s3 url is set same as internal",
       {foreach,
        fun() ->
@@ -185,7 +185,7 @@ generate_presigned_url_uses_configured_s3_url_test_() ->
                       end}]
         end]}},
 
-     {"Calls mini_s3:s3_url with external url when "
+     {"Calls mini_s3:s3_url with external url when"
       "external s3 url is customized",
       {foreach,
        fun() ->
