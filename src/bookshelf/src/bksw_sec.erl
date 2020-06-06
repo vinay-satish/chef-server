@@ -131,10 +131,8 @@ common_auth(RequestId, Req0, #context{reqid = ReqId} = Context, Credential, XAmz
 
     % TODO: explain rationale for doing it this way (ease of unit testing)
     % https://docs.aws.amazon.com/general/latest/gr/sigv4-date-handling.html
-    DateIfUndefined = fun() -> wrq:get_req_header("date", Req0) end,
+    DateIfUndefined = wrq:get_req_header("date", Req0),
     (Date = get_check_date(XAmzDate, DateIfUndefined, CredentialScopeDate)) /= err orelse throw({RequestId, Req0, Context}),
-
-
 
     {AccessKey, SecretKey} = getkeys(AWSAccessKeyId, Context),
     %{AccessKey, SecretKey} = {"e1efc99729beb175", "fc683cd9ed1990ca"},
@@ -454,10 +452,10 @@ get_bucket_key(Path) ->
 
 % TODO: change A,B,C etc to Y1, Y2, M1, M2, etc...
 % https://docs.aws.amazon.com/general/latest/gr/sigv4-date-handling.html
--spec get_check_date(string(), string(), string()) -> string() | err.
+-spec get_check_date(string() | undefined, string(), string()) -> string() | err.
 get_check_date(ISO8601Date, DateIfUndefined, [A, B, C, D, E, F, G, H]) ->
     Date = case ISO8601Date of
-               undefined -> DateIfUndefined();
+               undefined -> DateIfUndefined;
                _         -> ISO8601Date
            end,
     case Date of
@@ -478,7 +476,7 @@ get_check_date(ISO8601Date, DateIfUndefined, [A, B, C, D, E, F, G, H]) ->
 % keys, get corresponding key-value pairs. results are undefined
 % for nonexistent key(s).
 %-spec get_signed_headers(proplist(), proplist(), proplist()) -> proplist(). % for erlang20+
--spec get_signed_headers([tuple()], [tuple()], [tuple()]) -> [tuple()].
+-spec get_signed_headers([string()], [tuple()], [tuple()]) -> [tuple()].
 get_signed_headers([], _, SignedHeaders) -> lists:reverse(SignedHeaders);
 get_signed_headers(_, [], SignedHeaders) -> lists:reverse(SignedHeaders);
 get_signed_headers([Key | SignedHeaderKeys], Headers0, SignedHeaders) ->

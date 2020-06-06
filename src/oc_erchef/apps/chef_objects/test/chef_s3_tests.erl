@@ -92,7 +92,7 @@ generate_presigned_url_uses_configured_s3_url_test_() ->
     OrgId = <<"deadbeefdeadbeefdeadbeefdeadbeef">>,
     Checksum = <<"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa">>,
     Lifetime = 3600,
-    Config = mini_s3:new("", "", "http://s3.amazonaws.com"),
+%    Config = mini_s3:new("", "", "http://s3.amazonaws.com"),
     Expect_s3_url = fun(ExpectMethod, ExpectUrl, ExpectLifetime) ->
                             meck:expect(mini_s3, s3_url,
                                         fun(HTTPMethod, Bucket, _Key, MyLifetime, _ContentMD5,
