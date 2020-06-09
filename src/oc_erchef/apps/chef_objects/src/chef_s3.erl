@@ -27,11 +27,14 @@
 
 -include("chef_types.hrl").
 -include_lib("erlcloud/include/erlcloud_aws.hrl").
+% temporary for outputting debug info
+-include_lib("eunit/include/eunit.hrl").
 
 -export([
          check_checksums/2,
          delete_checksums/2,
          generate_presigned_url/5,
+         generate_presigned_url/6,
          generate_presigned_urls/5,
          make_key/2,
          bucket/0,
@@ -78,7 +81,7 @@ delete_checksums(OrgId, Checksums) ->
 generate_presigned_urls(OrgId, Lifetime, Method, Checksums, ExternalUrl) ->
     Bucket = bucket(),
     AwsConfig = get_external_config(ExternalUrl),
-    Urls = [{Checksum, generate_presigned_url(OrgId, Bucket, Lifetime, Method, Checksum, AwsConfig)}
+    Urls = [{Checksum, generate_presigned_url(OrgId, Bucket, Lifetime, Method, Checksum, AwsConfig, [])}
             || Checksum <- Checksums],
     Urls.
 
@@ -88,12 +91,22 @@ generate_presigned_urls(OrgId, Lifetime, Method, Checksums, ExternalUrl) ->
                               Checksum :: binary(),
                               ExternalUrl :: string()) -> Url :: binary().
 generate_presigned_url(OrgId, Lifetime, Method, Checksum, ExternalUrl) ->
+    ?debugFmt("~nchef_s3:generate_presigned_url/5", []),
+    generate_presigned_url(OrgId, Lifetime, Method, Checksum, ExternalUrl, false).
+
+generate_presigned_url(OrgId, Lifetime, Method, Checksum, ExternalUrl, AddHostPort) ->
+    ?debugFmt("~nchef_s3:generate_presigned_url/6", []),
     Bucket = bucket(),
     AwsConfig = get_external_config(ExternalUrl),
-    generate_presigned_url(OrgId, Bucket, Lifetime, Method, Checksum, AwsConfig).
+    Headers = case AddHostPort of
+        true -> [{"host", AwsConfig#aws_config.s3_host ++ ":" ++ integer_to_list(AwsConfig#aws_config.s3_port)}];
+        _    -> []
+    end,
+    ?debugFmt("~nadded header: ~p", [Headers]),
+    generate_presigned_url(OrgId, Bucket, Lifetime, Method, Checksum, AwsConfig, Headers).
 
-generate_presigned_url(OrgId, Bucket, Lifetime, Method, Checksum, AwsConfig) ->
-    Headers = headers_for_type(Method, Checksum),
+generate_presigned_url(OrgId, Bucket, Lifetime, Method, Checksum, AwsConfig, Headers0) ->
+    Headers = Headers0 ++ headers_for_type(Method, Checksum),
     Expiry = case application:get_env(chef_objects, s3_url_expiry_window_size) of
         {ok, {X, percent}} ->
             Interval = round((X / 100) * Lifetime),
