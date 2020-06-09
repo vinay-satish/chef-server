@@ -127,7 +127,7 @@ checksum_data(CSum, false, OrgId, VHost) ->
     %% FIXME: need to do a lookup either one at a time or in bulk to find out which
     %% checksums are already in the db.
     %% FIXME: will this be a problem for OSC w/ bookshelf?
-    PutUrl = chef_s3:generate_presigned_url(OrgId, ?PUT_URL_TTL, put, CSum, VHost),
+    PutUrl = chef_s3:generate_presigned_url(OrgId, ?PUT_URL_TTL, put, CSum, VHost, true),
     {[
       {<<"url">>, PutUrl},
       {<<"needs_upload">>, true}
