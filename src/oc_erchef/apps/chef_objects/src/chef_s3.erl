@@ -28,6 +28,9 @@
 -include("chef_types.hrl").
 -include_lib("erlcloud/include/erlcloud_aws.hrl").
 
+% temporary for outputting debug info
+-include_lib("eunit/include/eunit.hrl").
+
 -export([
          check_checksums/2,
          delete_checksums/2,
@@ -93,7 +96,9 @@ generate_presigned_url(OrgId, Lifetime, Method, Checksum, ExternalUrl) ->
     generate_presigned_url(OrgId, Bucket, Lifetime, Method, Checksum, AwsConfig).
 
 generate_presigned_url(OrgId, Bucket, Lifetime, Method, Checksum, AwsConfig) ->
-    Headers = headers_for_type(Method, Checksum),
+    Headers0 = headers_for_type(Method, Checksum),
+    Headers  = [{"host", AwsConfig#aws_config.s3_host ++ ":" ++ integer_to_list(AwsConfig#aws_config.s3_port)} | Headers0],
+?debugFmt("~nchef_s3:generate_presigned_url Headers = ~p", [Headers]),
     Expiry = case application:get_env(chef_objects, s3_url_expiry_window_size) of
         {ok, {X, percent}} ->
             Interval = round((X / 100) * Lifetime),
