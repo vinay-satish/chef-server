@@ -91,28 +91,13 @@ generate_presigned_urls(OrgId, Lifetime, Method, Checksums, ExternalUrl) ->
                               Checksum :: binary(),
                               ExternalUrl :: string()) -> Url :: binary().
 generate_presigned_url(OrgId, Lifetime, Method, Checksum, ExternalUrl) ->
-?debugFmt("~nchef_s3:generate_presigned_url/5 - HOW OFTEN IS THIS CALLED?", []),
     Bucket = bucket(),
     AwsConfig = get_external_config(ExternalUrl),
-    generate_presigned_url(OrgId, Bucket, Lifetime, Method, Checksum, AwsConfig, true).
+    generate_presigned_url(OrgId, Bucket, Lifetime, Method, Checksum, AwsConfig).
 
 generate_presigned_url(OrgId, Bucket, Lifetime, Method, Checksum, AwsConfig) ->
-    generate_presigned_url(OrgId, Bucket, Lifetime, Method, Checksum, AwsConfig, []).
-
--spec generate_presigned_url(OrgId      :: object_id(),
-                             Bucket     :: string(),
-                             Lifetime   :: integer(),
-                             Method     :: http_verb(),
-                             Checksum   :: binary(),
-                             AwsConfig  :: aws_config(),
-                             AddHostHdr :: boolean() | [tuple()]) -> Url :: binary().
-generate_presigned_url(OrgId, Bucket, Lifetime, Method, Checksum, AwsConfig, true) ->
-    AddHostHdr  = [{"host", AwsConfig#aws_config.s3_host ++ ":" ++ integer_to_list(AwsConfig#aws_config.s3_port)}],
-    generate_presigned_url(OrgId, Bucket, Lifetime, Method, Checksum, AwsConfig, AddHostHdr);
-generate_presigned_url(OrgId, Bucket, Lifetime, Method, Checksum, AwsConfig, false) ->
-    generate_presigned_url(OrgId, Bucket, Lifetime, Method, Checksum, AwsConfig, []);
-generate_presigned_url(OrgId, Bucket, Lifetime, Method, Checksum, AwsConfig, AddHostHdr) ->
-    Headers = headers_for_type(Method, Checksum) ++ AddHostHdr,
+    Headers0 = headers_for_type(Method, Checksum),
+    Headers  = [{"host", AwsConfig#aws_config.s3_host ++ ":" ++ integer_to_list(AwsConfig#aws_config.s3_port)} | Headers0],
 ?debugFmt("~nchef_s3:generate_presigned_url Headers = ~p", [Headers]),
     Expiry = case application:get_env(chef_objects, s3_url_expiry_window_size) of
         {ok, {X, percent}} ->
@@ -130,7 +115,6 @@ generate_presigned_url(OrgId, Bucket, Lifetime, Method, Checksum, AwsConfig, Add
                    Expiry,
                    Headers,
                    AwsConfig).
-
 
 %% @doc Utility function to normalize inputs to Erlang strings.  Needed to bridge our binary
 %% string standard with mini_s3's string standard.
