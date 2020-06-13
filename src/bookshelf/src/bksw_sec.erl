@@ -58,7 +58,7 @@ presigned_auth(RequestId, Req0, Context, Headers0) ->
     Credential = wrq:get_qs_value("X-Amz-Credential", "", Req0),
     ?debugFmt("~nx-amz-credential:  ~p", [wrq:get_qs_value("X-Amz-Credential", "", Req0)]),
 
-    % can be undefined
+    % case of undefined handled later
     XAmzDate = wrq:get_qs_value("X-Amz-Date", "", Req0),
     ?debugFmt("~nXAmzDate: ~p", [XAmzDate]),
 
@@ -89,7 +89,7 @@ header_auth(RequestId, IncomingAuth, Req0, Context, Headers0) ->
     %    [AWSAccessKeyId, CredentialScopeDate | _]  = parse_x_amz_credential(Credential),
     %    %?debugFmt("~naws-access-key-id: ~p~nCredentialScopeDate: ~p", [AWSAccessKeyId, CredentialScopeDate]),
 
-        % can be undefined
+        % case of undefined handled later
         XAmzDate = wrq:get_req_header("x-amz-date", Req0),
         ?debugFmt("~nXAmzDate: ~p", [XAmzDate]),
 
@@ -129,7 +129,6 @@ common_auth(RequestId, Req0, #context{reqid = ReqId} = Context, Credential, XAmz
     (ParseCred = parse_x_amz_credential(Credential)) /= err orelse throw({RequestId, Req0, Context}),
     [AWSAccessKeyId, CredentialScopeDate, Region | _] = ParseCred,
 
-    % TODO: explain rationale for doing it this way (ease of unit testing)
     % https://docs.aws.amazon.com/general/latest/gr/sigv4-date-handling.html
     DateIfUndefined = wrq:get_req_header("date", Req0),
     (Date = get_check_date(XAmzDate, DateIfUndefined, CredentialScopeDate)) /= err orelse throw({RequestId, Req0, Context}),
@@ -393,7 +392,7 @@ common_auth(RequestId, Req0, #context{reqid = ReqId} = Context, Credential, XAmz
 
 % https://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-header-based-auth.html
 %-spec check_signed_headers_authhead(proplist(), proplist()) -> boolean(). % for erlang20+
--spec check_signed_headers_authhead([tuple()], [tuple()]) -> boolean().
+-spec check_signed_headers_authhead(SignedHeaders::[tuple()], Headers::[tuple()]) -> boolean().
 check_signed_headers_authhead(SignedHeaders, Headers) ->
 %    check_signed_headers_common(SignedHeaders, Headers) andalso
 %
@@ -425,7 +424,7 @@ end.
 % and presigned url verification.
 % https://docs.amazonaws.cn/en_us/AmazonS3/latest/API/sigv4-query-string-auth.html
 %-spec check_signed_headers_common(proplist(), proplist()) -> boolean(). % for erlang20+
--spec check_signed_headers_common([tuple()], [tuple()]) -> boolean().
+-spec check_signed_headers_common(SignedHeaders::[tuple()], Headers::[tuple()]) -> boolean().
 check_signed_headers_common(SignedHeaders, Headers) ->
 %    % host header is required
 %    proplists:is_defined("host", SignedHeaders) andalso
@@ -439,9 +438,9 @@ check_signed_headers_common(SignedHeaders, Headers) ->
 % any x-amz-* headers present in request are required
 [] == [Key || {Key, _} <- Headers, is_amz(Key), not proplists:is_defined(Key, SignedHeaders)].
 
-% split  "<bucketname>/<key>" (possibly leading-trailing /) into {"bucketname", "key"}
+% split  "<bucketname>/<key>" (possibly leading and/or trailing /) into {"bucketname", "key"}
 % Path = "<bucketname>/<key>"
--spec get_bucket_key(string()) -> {string(), string()}.
+-spec get_bucket_key(Path::string()) -> {string(), string()}.
 get_bucket_key(Path) ->
     %case string:tokens(  Path) of
     case string:lexemes(Path, "/") of % for erlang 22+
@@ -450,33 +449,31 @@ get_bucket_key(Path) ->
         [Bucket | Key] -> {Bucket, filename:join(Key)}
     end.
 
-% TODO: change A,B,C etc to Y1, Y2, M1, M2, etc...
 % https://docs.aws.amazon.com/general/latest/gr/sigv4-date-handling.html
--spec get_check_date(string() | undefined, string(), string()) -> string() | err.
-get_check_date(ISO8601Date, DateIfUndefined, [A, B, C, D, E, F, G, H]) ->
+-spec get_check_date(ISO8601Date::string() | undefined, DateIfUndefined::string(), string()) -> string() | err.
+get_check_date(ISO8601Date, DateIfUndefined, [Y1, Y2, Y3, Y4, M1, M2, D1, D2]) ->
     Date = case ISO8601Date of
                undefined -> DateIfUndefined;
                _         -> ISO8601Date
            end,
     case Date of
-        [A, B, C, D, E, F, G, H, $T, _, _, _, _, _, _, $Z] -> Date;
-        _                                                  -> err
+        [Y1, Y2, Y3, Y4, M1, M2, D1, D2, $T, _, _, _, _, _, _, $Z] -> Date;
+        _                                                          -> err
     end.
 
 %% get key-value pairs (headers) associated with specified keys
 %get_signed_headers(SignedHeaderKeys, Headers) ->
 %    lists:flatten([proplists:lookup_all(SignedHeaderKey, Headers) || SignedHeaderKey <- SignedHeaderKeys]).
 
-%TODO: change spec to parameter::type (or whatever it is - look it up)
 %TODO: possibly simplify logic since efficiency should not be a concern.
 %TODO: look at 434, test to see if that 2nd empty list can actually happen.
 %TODO: look at the unit test, consider integration test (pedant test).
 % get key-value pairs (headers) associated with specified keys.
 % for each key, get first occurance of key-value. for duplicated
 % keys, get corresponding key-value pairs. results are undefined
-% for nonexistent key(s).
+% for nonexistent key(s). SignedHeaders is an accumulator.
 %-spec get_signed_headers(proplist(), proplist(), proplist()) -> proplist(). % for erlang20+
--spec get_signed_headers([string()], [tuple()], [tuple()]) -> [tuple()].
+-spec get_signed_headers(SignedHeaderKeys::[string()], Headers::[tuple()], SignedHeaders::[tuple()]) -> [tuple()].
 get_signed_headers([], _, SignedHeaders) -> lists:reverse(SignedHeaders);
 get_signed_headers(_, [], SignedHeaders) -> lists:reverse(SignedHeaders);
 get_signed_headers([Key | SignedHeaderKeys], Headers0, SignedHeaders) ->
@@ -504,8 +501,7 @@ parse_x_amz_credential(Cred) ->
         _                                                          -> err
     end.
 
-%TODO: explain rationale
-% split signed header string into component parts
+% split signed header string into component parts. returns empty string on empty string.
 % Headers = "<header1>;<header2>;...<headerN>"
 - spec parse_x_amz_signed_headers(string()) -> [string()].
 parse_x_amz_signed_headers(Headers) ->
@@ -513,7 +509,7 @@ parse_x_amz_signed_headers(Headers) ->
 
 % convert the keys of key-value pairs to lowercase strings
 %-spec process_headers([proplist()]) -> [proplist()]. % for erlang20+
--spec process_headers([tuple()]) -> [tuple()].
+-spec process_headers(Headers::[tuple()]) -> [tuple()].
 process_headers(Headers) ->
     [{string:casefold(
         case is_atom(Key) of
@@ -546,7 +542,7 @@ process_headers(Headers) ->
 % maybe erlang:monotonic_time?
 % make sure everything is timewarp safe.
 % https://erlang.org/doc/apps/erts/time_correction.html
--spec is_expired(string(), integer()) -> boolean().
+-spec is_expired(DateTimeString::string(), ExpiresInSecondsInt::integer()) -> boolean().
 is_expired(DateTimeString, ExpiresInSecondsInt) ->
     % most ways of getting the date/time seem problematic.  for instance, docs for
     % calendar:universal_time() and erlang:universaltime() say: 'Returns local time
