@@ -58,7 +58,7 @@ presigned_auth(RequestId, Req0, Context, Headers0) ->
     Credential = wrq:get_qs_value("X-Amz-Credential", "", Req0),
     ?debugFmt("~nx-amz-credential:  ~p", [wrq:get_qs_value("X-Amz-Credential", "", Req0)]),
 
-    % case of undefined handled later
+    % case of undefined is handled later
     XAmzDate = wrq:get_qs_value("X-Amz-Date", "", Req0),
     ?debugFmt("~nXAmzDate: ~p", [XAmzDate]),
 
@@ -214,7 +214,7 @@ common_auth(RequestId, Req0, #context{reqid = ReqId} = Context, Credential, XAmz
             IncomingSig = list_to_binary(IncomingSignature),
 
             % compare signatures.  assumes X-Amz-Signature is always on the end?
-            [_, ComparisonSig] = string:split(ComparisonURL, "&X-Amz-Signature=", all),
+            [_, ComparisonSig] = string:split(ComparisonURL, "&X-Amz-Signature=", trailing),
             ?debugFmt("~ncomparison sig: ~p", [ComparisonSig]),
 
             case IncomingSig of
