@@ -242,7 +242,8 @@ finish_read(#entryref{fd=Fd, bucket=Bucket, entry=Entry}) ->
     file:close(Fd).
 
 -spec write(#entryref{}, binary()) -> {ok, #entryref{}} | {error, file:posix() | badarg | terminated}.
-write(#entryref{fd=Fd, ctx=Ctx, bucket=Bucket, entry=Entry}=ERef, Data) when is_binary(Data) ->
+write(#entryref{fd=Fd, ctx=Ctx,
+                bucket=Bucket, entry=Entry}=ERef, Data) when is_binary(Data) ->
 %?debugFmt("~nbksw_io:write... "),
     case file:write(Fd, Data) of
         ok ->
