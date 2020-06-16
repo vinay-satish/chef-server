@@ -141,6 +141,8 @@ validate_checksums_uploaded(ReqId, #chef_sandbox{id = _BoxId, checksums = Checks
             ok;
         {_, OverallErrorCount} when OverallErrorCount =/= 0 ->
             %% We had some errors :(
+io:format("~nchef_wm_named_sandbox:validate_checksums_uploaded"),
+io:format("~nNotFound: ~p~nOverallErrorCount: ~p~nErrors: ~p", [NotFound, OverallErrorCount, Errors]),
             throw({checksum_check_error, OverallErrorCount});
         {Missing, _} ->
             %% Some checksums were missing :(
