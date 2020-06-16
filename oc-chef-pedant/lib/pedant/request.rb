@@ -137,11 +137,11 @@ module Pedant
       auth_headers = opts[:auth_headers] || requestor.signing_headers(method, url, payload)
 
       uri = URI.parse(url)
-      if (uri.scheme == 'http' && uri.port == 80) || (uri.scheme == 'https' && uri.port == 443)
-        host = uri.host
-      else
+#      if (uri.scheme == 'http' && uri.port == 80) || (uri.scheme == 'https' && uri.port == 443)
+#        host = uri.host
+#      else
         host = "#{uri.host}:#{uri.port}"
-      end
+#      end
 
       final_headers = standard_headers.
         merge(auth_headers).
