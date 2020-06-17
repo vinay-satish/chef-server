@@ -99,6 +99,14 @@ from_json(Req, #base_state{reqid = ReqId,
         Req1 = chef_wm_util:set_json_body(Req, sandbox_to_ejson(Sandbox)),
         {true, Req1, State}
     catch
+        throw:{checksum_check_error, Errors} ->
+            % need some logic here around detecting whether the error was a 404 file not found.
+            % need to know what 404 file not found means, and what we should do. i am assuming
+            % here (need confirmation) that a 404 means we should return a 503 (service unavailable).
+            Msg = iolist_to_binary([<<"this should have been triggered by a 404. assuming we return a 503.">>]),
+            EMsg = chef_wm_util:error_message_envelope(Msg),
+            {{halt, 503}, chef_wm_util:set_json_body(Req, EMsg), State};
+
         throw:{missing_checksums, Sums} ->
             SumList0 = iolist_to_binary([ <<(as_binary(S))/binary, ", ">> || S <- Sums]),
             SumList = binary:part(SumList0, {0, size(SumList0) - 2}),
@@ -143,7 +151,7 @@ validate_checksums_uploaded(ReqId, #chef_sandbox{id = _BoxId, checksums = Checks
             %% We had some errors :(
 io:format("~nchef_wm_named_sandbox:validate_checksums_uploaded"),
 io:format("~nNotFound: ~p~nOverallErrorCount: ~p~nErrors: ~p", [NotFound, OverallErrorCount, Errors]),
-            throw({checksum_check_error, OverallErrorCount});
+            throw({checksum_check_error, Errors});
         {Missing, _} ->
             %% Some checksums were missing :(
             throw({missing_checksums, Missing})
