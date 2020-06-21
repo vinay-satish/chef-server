@@ -1025,7 +1025,6 @@ describe "ACL API", :acl do
                 :status => 200
               })
           end
-puts"\n\naccount_acl_spec.rb#1028\ndeletion_url: #{deletion_url}"
           delete(deletion_url, platform.admin_user).should look_like({
               :status => 200
             })
