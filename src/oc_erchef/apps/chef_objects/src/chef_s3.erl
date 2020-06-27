@@ -94,21 +94,20 @@ generate_presigned_url(OrgId, Lifetime, Method, Checksum, ExternalUrl) ->
 
 generate_presigned_url(OrgId, Bucket, Lifetime, Method, Checksum, AwsConfig) ->
     Headers = headers_for_type(Method, Checksum),
-%    Expiry = case application:get_env(chef_objects, s3_url_expiry_window_size) of
-%        {ok, {X, percent}} ->
-%            Interval = round((X / 100) * Lifetime),
-%            {Lifetime, Interval};
-%        {ok, {X, minutes}} ->
-%            %% Convert X to seconds
-%            {Lifetime, (X * 60)};
-%        _ ->
-%            Lifetime
-%    end,
+    Expiry = case application:get_env(chef_objects, s3_url_expiry_window_size) of
+        {ok, {X, percent}} ->
+            Interval = round((X / 100) * Lifetime),
+            {Lifetime, Interval};
+        {ok, {X, minutes}} ->
+            %% Convert X to seconds
+            {Lifetime, (X * 60)};
+        _ ->
+            Lifetime
+    end,
     mini_s3:s3_url(Method,
                    as_string(Bucket),
                    make_key(OrgId, Checksum),
-%                   Expiry,
-                   Lifetime,
+                   Expiry,
                    Headers,
                    AwsConfig).
 
