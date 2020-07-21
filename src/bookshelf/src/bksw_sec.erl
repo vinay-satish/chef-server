@@ -26,6 +26,7 @@
 -endif.
 
 -include("internal.hrl").
+-include_lib("eunit/include/eunit.hrl").
 
 %%===================================================================
 %% API functions
@@ -45,6 +46,7 @@ is_authorized(Req0, #context{} = Context) ->
 % presigned url verification
 % https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-query-string-auth.html
 presigned_auth(RequestId, Req0, Context, Headers0) ->
+?debugFmt("~n~nbksw_sec: processing presigned url", []),
     Credential = wrq:get_qs_value("X-Amz-Credential", "", Req0),
     XAmzDate = wrq:get_qs_value("X-Amz-Date", "", Req0),
     SignedHeaderKeysString = wrq:get_qs_value("X-Amz-SignedHeaders", "", Req0),
@@ -56,6 +58,7 @@ presigned_auth(RequestId, Req0, Context, Headers0) ->
 % https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-auth-using-authorization-header.html
 header_auth(RequestId, IncomingAuth, Req0, Context, Headers0) ->
     try
+?debugFmt("~n~nbksw_sec: processing header authorization", []),
         (ParseAuth = parse_authorization(IncomingAuth)) /= err orelse throw({RequestId, Req0, Context}),
         [Credential, SignedHeaderKeysString, IncomingSignature] = ParseAuth,
         XAmzDate = wrq:get_req_header("x-amz-date", Req0),
@@ -66,6 +69,7 @@ header_auth(RequestId, IncomingAuth, Req0, Context, Headers0) ->
 
 common_auth(RequestId, Req0, #context{reqid = ReqId} = Context, Credential, XAmzDate, SignedHeaderKeysString, IncomingSignature, XAmzExpiresString, Headers0, VerificationType) ->
     try
+?debugFmt("~nbksw_sec: in common auth", []),
         (Host = wrq:get_req_header("Host", Req0)) /= undefined orelse throw({RequestId, Req0, Context}),
 
         (ParseCred = parse_x_amz_credential(Credential)) /= err orelse throw({RequestId, Req0, Context}),
