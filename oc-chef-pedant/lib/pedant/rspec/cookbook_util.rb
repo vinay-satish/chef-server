@@ -54,6 +54,7 @@ module Pedant
           # functions that make use of Tempfile. Since we want the
           # entire contents, rewind before read.
           file.rewind
+puts "\n\nattempting upload_to_sandbox - \nupload_url: #{upload_url}\nheaders: #{headers}\n\n"
           ensure_2xx(put(upload_url, admin_user, :payload => file.read,
                          :headers => headers))
         else
