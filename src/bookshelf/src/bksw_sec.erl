@@ -290,6 +290,8 @@ is_authorized(Req0, Context) ->
 %            _    -> Key
 %        end), Val} || {Key, Val} <- Headers].
 %
+%% we are not measuring an elapsed time, nor determining order of events,
+%% nor creating a unique name, so time correction should not be an issue.
 %% https://erlang.org/doc/apps/erts/time_correction.html
 %-spec is_expired(DateTimeString::string(), ExpiresSec::integer()) -> boolean().
 %is_expired(DateTimeString, ExpiresSec) ->
