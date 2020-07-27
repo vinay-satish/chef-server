@@ -38,15 +38,16 @@ init(Config) ->
     {ok, bksw_conf:get_context(Config)}.
 
 is_authorized(Rq, Ctx) ->
+    io:format("~nentered bksw_wm_base:is_authorized"),
     X = bksw_sec:is_authorized(Rq, Ctx),
-    %io:format("~nbksw_wm_base:is_authorized - RESULT = ~p", [X]),
+    io:format("~nbksw_wm_base:is_authorized - RESULT = ~p", [X]),
     X.
 
 finish_request(Rq0, Ctx) ->
     try
         case wrq:response_code(Rq0) of
             500 ->
-                %io:format("~nbksw_wm_base:finish_request got 500 error - ~p", [Rq0]),
+io:format("~nbksw_wm_base:finish_request got 500 error - ~p", [Rq0]),
                 Rq1 = create_500_response(Rq0, Ctx),
                 {true, Rq1, Ctx};
             %% Ensure we don't tell upstream servers to cache 404s
@@ -62,6 +63,8 @@ finish_request(Rq0, Ctx) ->
     end.
 
 service_available(Req, #context{reqid_header_name = HeaderName} = State) ->
+io:format("~nentered bksw_wm_base:service_available"),
+
     %% Extract or generate a request id
     ReqId = oc_wm_request:read_req_id(HeaderName, Req),
 

@@ -20,10 +20,10 @@
 
 -module(bksw_sec).
 
--include_lib("eunit/include/eunit.hrl").
 
 -export([is_authorized/2]).
 -ifdef(TEST).
+-include_lib("eunit/include/eunit.hrl").
 -compile([export_all, nowarn_export_all]).
 -endif.
 
@@ -34,8 +34,10 @@
 %% API functions
 %%===================================================================
 is_authorized(Req0, #context{auth_check_disabled=true} = Context) ->
+    io:format("~nin bksw_sec is_authorized - AUTH CHECK DISABLED", []),
     {true, Req0, Context};
 is_authorized(Req0, #context{} = Context) ->
+    io:format("~nin bksw_sec is_authorized", []),
     Headers = mochiweb_headers:to_list(wrq:req_headers(Req0)),
     {RequestId, Req1} = bksw_req:with_amz_request_id(Req0),
     case proplists:get_value('Authorization', Headers, undefined) of

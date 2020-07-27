@@ -23,9 +23,9 @@
 
 
 -include("oc_chef_wm.hrl").
--include_lib("eunit/include/eunit.hrl").
 
 -ifdef(TEST).
+-include_lib("eunit/include/eunit.hrl").
 -compile([export_all, nowarn_export_all]).
 -endif.
 
