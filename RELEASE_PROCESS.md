@@ -44,7 +44,7 @@ In order to release, you will need the following accounts/permissions:
 
 ### Testing the Release
 
-Every merge to chef-server master is built and this clean build is tested with the automated Integration Test Pipeline https://buildkite.com/chef/chef-chef-server-master-integration-test:
+Every merge to chef-server master must be built, and this build tested with the automated Integration Test Pipeline https://buildkite.com/chef/chef-chef-server-master-integration-test.  The integration test run for the tag being shipped must be successful:
 
 - Click on `New Build`.
 - Leave `Branch` set to `master`.
@@ -73,12 +73,12 @@ null_resource.chef_server_config (remote-exec): echo -e '
 null_resource.chef_server_config (remote-exec): BEGIN INSTALL CHEF SERVER
 ```
 - Obtain the user and password by... ??? `FINISH THIS`
-- Hit the server via `http`, e.g. `http://whatever-public-ip?`
-- Next steps
+- Hit the server via `http`, e.g. `http://whatever-public-ip?` `<--- what's the URL?`
+- Next steps <--- `what are these, if any?` <--- 
 
-[insert necessary manual testing instructions here]
+[insert necessary (azure?) manual testing instructions here]
 
-If there are failures, unless the failure is a "known failure" or expected, you cannot ship a release until it's fixed. Note, no changes other than CHANGELOG/RELEASE_NOTES changes should land on master between testing and releasing since we typically tag HEAD of master. If something large does land on master, the release tag you create should point specifically at the build that you tested. The git SHA of the build you are testing can be found in /opt/opscode/version-manifest.json.
+Any failures must be fixed before shipping a release, unless they are "known failures" or expected. Note that no changes other than CHANGELOG/RELEASE_NOTES changes should land on master between testing and releasing since we typically tag HEAD of master. If something large does land on master, the release tag you create should point specifically at the build that you tested. The git SHA of the build you are testing can be found in /opt/opscode/version-manifest.json.
 
 ### Preparing for the release
 
