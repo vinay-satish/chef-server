@@ -358,8 +358,14 @@ create_resource(RequestorId, ResourceType) ->
     %% What are the failure modes? Can we succeed and not get a doc?
     case oc_chef_authz_http:request(pluralize_resource(ResourceType), post, [], [], RequestorId) of
         %% What are the failure modes? Can we succeed and not get a doc?
-        {ok, IdDoc} -> {ok, ej:get({<<"id">>}, IdDoc)};
-        {error, server_error} -> {error, server_error}
+        {ok, IdDoc} ->
+            {ok, ej:get({<<"id">>}, IdDoc)};
+        {error, server_error} ->
+            io:format("~n~noc_chef_authz: got {error, server_error}"),
+            {error, server_error};
+        X ->
+            io:format("~n~noc_chef_authz: got ~p", [X]),
+            X
     end.
 
 %
