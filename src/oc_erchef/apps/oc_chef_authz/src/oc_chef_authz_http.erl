@@ -74,10 +74,14 @@ request(ReqId, Path, Method, Headers, Body, RequestorId) ->
 -spec request(req_id(), pid() | 'no_pid', http_path(), http_method(), [{string(),
               string()}], http_body(), requestor_id()) -> ok | {ok, jiffy:json_value()} | {error, _}.
 request(ReqId, _Pid, Path, Method, Headers, Body, RequestorId) ->
+io:format("~n~noc_chef_authz_http:request/7"),
+io:format("~nReqId: ~p~n_Pid: ~p~nPath: ~p~nMethod: ~p~nHeaders: ~p~nBody: ~p~nRequestorId: ~p", [ReqId, _Pid, Path, Method, Headers, Body, RequestorId]),
     FullHeaders = full_headers(ReqId, RequestorId, Headers),
     AuthzConfig = envy:get(oc_chef_authz, authz_service, list),
     Timeout = proplists:get_value(timeout, AuthzConfig),
+io:format("~noc_chef_authz_http: calling oc_httpc:request"),
     Response = oc_httpc:request(?MODULE, to_str(Path), FullHeaders, Method, Body, Timeout),
+io:format("~noc_chef_authz_http: calling handle_ibrowse_response"),
     handle_ibrowse_response(Response).
 
 handle_ibrowse_response({ok, Status, _, ResponseBody}) when Status =:= "200";

@@ -118,7 +118,7 @@
   0},
  {<<"opscoderl_httpc">>,
   {git,"git://github.com/chef/opscoderl_httpc.git",
-       {ref,"bab889e9165b662c2c23ae3cd5449d6875e7507c"}},
+       {branch, "lbaker/update-erlang22"}},
   0},
 % {<<"opscoderl_wm">>,
 %  {git,"git://github.com/chef/opscoderl_wm.git",
