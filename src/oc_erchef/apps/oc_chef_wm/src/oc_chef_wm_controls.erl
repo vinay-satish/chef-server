@@ -59,9 +59,10 @@ service_available(Req, State) ->
                     Req2 = wrq:set_resp_header("Content-type", "application/json", Req1),
                     Req3 = wrq:set_resp_body(chef_json:encode({[{<<"error">>, Msg}]}), Req2),
                     {{halt, 410}, Req3, State1#base_state{log_msg = rabbitmq_disabled}}
-            end;
-        Other ->
-          Other
+            end%;
+        % DIALYZER: The variable Other can never match since previous clauses completely covered the type ...
+        %Other ->
+        %  Other
     end.
 
 request_type() ->

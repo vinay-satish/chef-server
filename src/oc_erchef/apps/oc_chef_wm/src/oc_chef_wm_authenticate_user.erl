@@ -105,7 +105,7 @@ verify_user(_UserName, Password, local, User, State) ->
         false ->
             {false, 401}
     end;
-verify_user(UserName, Password, ldap, _, #base_state{chef_db_context = Ctx}) ->
+verify_user(UserName, Password, ldap, _, #base_state{chef_db_context = Ctx}) when is_binary(Password) ->
     case oc_chef_wm_authn_ldap:authenticate(UserName, Password) of
         {error, connection} ->
             {false, 504};
@@ -151,6 +151,7 @@ malformed_request_message(#ej_invalid{}, _Req, _State) ->
     chef_wm_util:error_message_envelope(<<"invalid user authentication request">>).
 
 auth_fail_message(401) ->
-    chef_wm_util:error_message_envelope(<<"Failed to authenticate: Username and password incorrect">>);
-auth_fail_message(504) ->
-    chef_wm_util:error_message_envelope(<<"Authentication server is unavailable.">>).
+    chef_wm_util:error_message_envelope(<<"Failed to authenticate: Username and password incorrect">>). %;
+% DIALYZER: The pattern 504 can never match the type 401
+%auth_fail_message(504) ->
+%    chef_wm_util:error_message_envelope(<<"Authentication server is unavailable.">>).

@@ -126,8 +126,10 @@ maybe_delete_authz_id_or_error(1, Object, _RequestorId)  when is_record(Object, 
     ok;
 maybe_delete_authz_id_or_error({ok, 1}, #oc_chef_cookbook_artifact_version{authz_id = AuthzId}, RequestorId) ->
     case oc_chef_cookbook_artifact:exists_by_authz_id(AuthzId) of
-        true -> ok;
-        false -> oc_chef_authz:delete_resource(RequestorId, object, AuthzId);
+        % DIALYZER: The pattern 'true' can never match the type {'error',_}
+        %           The pattern 'false' can never match the type {'error',_}
+        %true -> ok;
+        %false -> oc_chef_authz:delete_resource(RequestorId, object, AuthzId);
         {error, _Why} = Error -> Error
     end;
 maybe_delete_authz_id_or_error({ok, 1}, #chef_cookbook_version{}, _RequestorId) ->

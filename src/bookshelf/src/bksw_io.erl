@@ -277,9 +277,10 @@ filter_entries(Bucket, [Entry|T], Ex, Accum) ->
         nomatch ->
             case entry_md(Bucket, filename:basename(Entry)) of
                 {ok, Obj} ->
-                    filter_entries(Bucket, T, Ex, [Obj|Accum]);
-                _Error ->
-                    filter_entries(Bucket, T, Ex, Accum)
+                    filter_entries(Bucket, T, Ex, [Obj|Accum])%;
+                % DIALYZER: The variable _Error can never match since previous clauses completely covered the type {'ok',#object{path::'undefined' | binary(),name::'undefined' | binary(),date::{{1..1114111,1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12,1..255},{byte(),byte(),byte()}},size::non_neg_integer(),digest::binary()}}
+                %_Error ->
+                %    filter_entries(Bucket, T, Ex, Accum)
             end;
         match ->
             filter_entries(Bucket, T, Ex, Accum)

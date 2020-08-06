@@ -102,15 +102,16 @@ check_actions_queue_at_capacity(PoolNameAtom, Vhost, Queue) ->
     {MaxLength, CurrentLength, QueueAtCapacity} =
         chef_wm_rabbitmq_management:sync_check_queue_at_capacity(PoolNameAtom, Vhost, Queue),
     case QueueAtCapacity of
-        true ->
-            case PreventStartupOnCap of
-                true ->
-                    lager:critical("Vhost ~p, queue ~p at capacity, cannot start", [Vhost, Queue]),
-                    erlang:error(analytics_queue_at_capacity);
-                false ->
-                    lager:warning("Vhost ~p, queue ~p at capacity", [Vhost, Queue]),
-                    {MaxLength, CurrentLength}
-            end;
+        % DIALYZER: The pattern 'true' can never match the type 'false
+        %true ->
+        %    case PreventStartupOnCap of
+        %        true ->
+        %            lager:critical("Vhost ~p, queue ~p at capacity, cannot start", [Vhost, Queue]),
+        %            erlang:error(analytics_queue_at_capacity);
+        %        false ->
+        %            lager:warning("Vhost ~p, queue ~p at capacity", [Vhost, Queue]),
+        %            {MaxLength, CurrentLength}
+        %    end;
         false ->
             lager:info("Vhost ~p, queue ~p not at capacity or RabbitMQ Management Plugin unavailable",
                         [Vhost, Queue]),
