@@ -188,9 +188,8 @@ sync_check_queue_at_capacity(PoolNameAtom, Vhost, Queue) ->
 check_current_queue_state(PoolNameAtom, Vhost, Queue, DroppedSinceLastCheck) ->
     case chef_wm_rabbitmq_management:get_max_length(PoolNameAtom, Vhost) of
         undefined -> skipped;
-                     % max length isn't configured, or something is broken
-                     % don't continue.
-    % DIALYZER: The variable MaxLength can never match since previous clauses completely covered the type 'undefined'
+       % max length isn't configured, or something is broken
+       % don't continue.
        MaxLength ->
            lager:debug("Queue Monitor max length = ~p", [MaxLength]),
            check_current_queue_length(PoolNameAtom,
@@ -212,27 +211,26 @@ check_current_queue_length(PoolNameAtom, Vhost, Queue, MaxLength, DroppedSinceLa
             % a queue doesn't appear to be bound to the
             % exchange. The only thing we can do is reset the
             % dropped_since_last_check value to 0
-            {MaxLength, reset_dropped_since_last_check}%;
-    % DIALYZER: The variable N can never match since previous clauses completely covered the type 'undefined'
-    %   N ->
-    %           lager:info("Queue Monitor current length = ~p for VHost ~p and Queue ~p", [N, Vhost, Queue]),
-    %           QueueAtCapacity = CurrentLength == MaxLength,
-    %           {Ratio, Pcnt} = chef_wm_rabbitmq_management:calc_ratio_and_percent(CurrentLength, MaxLength),
-    %           case Ratio >= ?LOG_THRESHOLD of
-    %               true ->
-    %                   lager:warning("Queue Monitor has detected RabbitMQ for VHost ~p, queue ~p capacity at ~p%",
-    %                                 [Vhost, Queue, Pcnt]);
-    %               false -> ok
-    %           end,
-    %           case QueueAtCapacity of
-    %               true ->
-    %                   lager:warning("Queue Monitor has dropped ~p messages for VHost ~p, queue ~p since last check due to queue limit exceeded",
-    %                                   [DroppedSinceLastCheck, Vhost, Queue]);
-    %               false -> ok
-    %           end,
-    %           % successfully checked max length and current length
-    %           % update the state of the gen_server
-    %           {MaxLength, N, QueueAtCapacity}
+            {MaxLength, reset_dropped_since_last_check};
+       N ->
+               lager:info("Queue Monitor current length = ~p for VHost ~p and Queue ~p", [N, Vhost, Queue]),
+               QueueAtCapacity = CurrentLength == MaxLength,
+               {Ratio, Pcnt} = chef_wm_rabbitmq_management:calc_ratio_and_percent(CurrentLength, MaxLength),
+               case Ratio >= ?LOG_THRESHOLD of
+                   true ->
+                       lager:warning("Queue Monitor has detected RabbitMQ for VHost ~p, queue ~p capacity at ~p%",
+                                     [Vhost, Queue, Pcnt]);
+                   false -> ok
+               end,
+               case QueueAtCapacity of
+                   true ->
+                       lager:warning("Queue Monitor has dropped ~p messages for VHost ~p, queue ~p since last check due to queue limit exceeded",
+                                       [DroppedSinceLastCheck, Vhost, Queue]);
+                   false -> ok
+               end,
+               % successfully checked max length and current length
+               % update the state of the gen_server
+               {MaxLength, N, QueueAtCapacity}
     end.
 
 
