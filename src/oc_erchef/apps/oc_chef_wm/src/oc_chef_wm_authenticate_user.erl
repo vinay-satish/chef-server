@@ -93,6 +93,7 @@ process_post(Req, #base_state{chef_db_context = Ctx,
             {true, chef_wm_util:set_json_body(Req, EJson), State}
     end.
 
+%-dialyzer({nowarn_function, verify_user/5}).
 verify_user(_UserName, _Password, local, not_found,  _State) ->
     % Don't reveal that the user isn't found, only that we can't auth.
     {false, 401};
@@ -110,15 +111,15 @@ verify_user(UserName, Password, ldap, _, #base_state{chef_db_context = Ctx}) whe
         {error, connection} ->
             {false, 504};
         {error, unauthorized} ->
-            {false, 401};
-        {_ChefUid, AuthUserEJ} ->
-            ExtAuthUid = ej:get({<<"external_authentication_uid">>}, AuthUserEJ),
-            case chef_db:fetch(#chef_user{external_authentication_uid = ext_auth_id(ExtAuthUid)}, Ctx) of
-                not_found ->
-                    user_json(<<"unlinked">>, AuthUserEJ);
-                User = #chef_user{} ->
-                    user_json(<<"linked">>, User)
-            end
+            {false, 401}%;
+    %   {_ChefUid, AuthUserEJ} ->
+    %       ExtAuthUid = ej:get({<<"external_authentication_uid">>}, AuthUserEJ),
+    %       case chef_db:fetch(#chef_user{external_authentication_uid = ext_auth_id(ExtAuthUid)}, Ctx) of
+    %           not_found ->
+    %               user_json(<<"unlinked">>, AuthUserEJ);
+    %           User = #chef_user{} ->
+    %               user_json(<<"linked">>, User)
+    %       end
     end.
 
 ext_auth_id(Id) when Id == undefined;
