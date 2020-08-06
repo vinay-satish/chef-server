@@ -187,17 +187,17 @@ sync_check_queue_at_capacity(PoolNameAtom, Vhost, Queue) ->
                                                 {max_length(), current_length(), queue_at_capacity()}.
 check_current_queue_state(PoolNameAtom, Vhost, Queue, DroppedSinceLastCheck) ->
     case chef_wm_rabbitmq_management:get_max_length(PoolNameAtom, Vhost) of
-        undefined -> skipped%;
+        undefined -> skipped;
                      % max length isn't configured, or something is broken
                      % don't continue.
     % DIALYZER: The variable MaxLength can never match since previous clauses completely covered the type 'undefined'
-    %   MaxLength ->
-    %       lager:debug("Queue Monitor max length = ~p", [MaxLength]),
-    %       check_current_queue_length(PoolNameAtom,
-    %                                  Vhost,
-    %                                  Queue,
-    %                                  MaxLength,
-    %                                  DroppedSinceLastCheck)
+       MaxLength ->
+           lager:debug("Queue Monitor max length = ~p", [MaxLength]),
+           check_current_queue_length(PoolNameAtom,
+                                      Vhost,
+                                      Queue,
+                                      MaxLength,
+                                      DroppedSinceLastCheck)
     end.
 
 -spec check_current_queue_length(atom(), string(), string(), integer(), integer()) ->
