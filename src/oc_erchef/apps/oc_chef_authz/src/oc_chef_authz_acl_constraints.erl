@@ -65,19 +65,19 @@ check_admins_group_removal_from_grant_ace(OrgId, AuthzId, Type, AclPerm, NewAce)
       NewGroups = extract_acl_groups(AclPerm, NewAce),
       CurrentAce = oc_chef_authz_acl:fetch(Type, OrgId, AuthzId),
       %% CurrentAce always = {error, _} ?
+      % TODO: revert the changes to this case statement and see what happens
       case CurrentAce of
           {error, _} ->
-              error%;
+              error;
           % Dialyzer says this will never match
-      % The variable _ can never match since previous clauses completely covered the type {'error',_}
-      %   _ ->
-      %       CurrentGroups = extract_acl_groups(AclPerm, CurrentAce),
-      %       case check_admins_group_removal(CurrentGroups, NewGroups) of
-      %         not_removed ->
-      %           false;
-      %         removed ->
-      %           {true, attempted_admin_group_removal_grant_ace}
-      %       end
+          _ ->
+              CurrentGroups = extract_acl_groups(AclPerm, CurrentAce),
+              case check_admins_group_removal(CurrentGroups, NewGroups) of
+                not_removed ->
+                  false;
+                removed ->
+                  {true, attempted_admin_group_removal_grant_ace}
+              end
       end;
     _Other ->
       %% Needs to return false here, which means all is okay, so this can
