@@ -172,10 +172,10 @@ delete_search_db_by_type(OrgId, Type)
         X when X >= 5 ->
             chef_index_http:post("/chef/_delete_by_query", delete_query_body(QueryString), ?JSON_HEADER),
             commit(),
-            ok;
-        _ ->
-            {ok, _, _, Ids} = search_with_scroll(Query),
-            delete_ids(Ids)
+            ok%;
+        %_ ->
+        %    {ok, _, _, Ids} = search_with_scroll(Query),
+        %    delete_ids(Ids)
     end.
 
 -spec delete_search_db(OrgId :: binary()) -> ok.
@@ -193,10 +193,10 @@ delete_search_db(OrgId) ->
             %% TODO(ssd) 2020-05-15: Why don't we check the return value here?
             chef_index_http:post("/chef/_delete_by_query", delete_query_body(QueryString), ?JSON_HEADER),
             commit(),
-            ok;
-        _ ->
-            {ok, _, _, Ids} = search_with_scroll(Query),
-            delete_ids(Ids)
+            ok%;
+        %_ ->
+        %    {ok, _, _, Ids} = search_with_scroll(Query),
+        %    delete_ids(Ids)
     end.
 
 delete_query_body(QueryString) ->
