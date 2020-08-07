@@ -122,11 +122,11 @@ verify_user(UserName, Password, ldap, _, #base_state{chef_db_context = Ctx}) whe
     %       end
     end.
 
-ext_auth_id(Id) when Id == undefined;
-                     Id == null ->
-    <<"">>;
-ext_auth_id(Id) ->
-    Id.
+%ext_auth_id(Id) when Id == undefined;
+%                     Id == null ->
+%    <<"">>;
+%ext_auth_id(Id) ->
+%    Id.
 
 maybe_upgrade_password(Password, User, #base_state{requestor_id = Requestor, chef_db_context = Ctx}) ->
     PasswordData = chef_user:password_data(User),
