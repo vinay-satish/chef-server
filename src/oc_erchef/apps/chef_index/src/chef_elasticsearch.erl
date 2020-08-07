@@ -174,13 +174,8 @@ delete_search_db_by_type(OrgId, Type)
             commit(),
             ok;
         _ ->
-            case search_with_scroll(Query) of
-                {ok, _, _, Ids} ->
-                    delete_ids(Ids);
-                _ ->
-                    % error?
-                    ok
-            end
+            {ok, _, _, Ids} = search_with_scroll(Query),
+            delete_ids(Ids)
     end.
 
 -spec delete_search_db(OrgId :: binary()) -> ok.
@@ -200,13 +195,8 @@ delete_search_db(OrgId) ->
             commit(),
             ok;
         _ ->
-            case search_with_scroll(Query) of
-                {ok, _, _, Ids} ->
-                    delete_ids(Ids);
-                _ ->
-                    % error?
-                    ok
-            end
+            {ok, _, _, Ids} = search_with_scroll(Query),
+            delete_ids(Ids)
     end.
 
 delete_query_body(QueryString) ->
