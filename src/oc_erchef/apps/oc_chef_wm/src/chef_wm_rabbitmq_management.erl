@@ -44,7 +44,7 @@
 
 -type max_length() :: integer().
 -type current_length() :: integer().
--type queue_at_capacity() :: boolean.
+-type queue_at_capacity() :: boolean().
 
 
 % NOTE: oc_httpc client is configured to prepend /api
@@ -169,7 +169,7 @@ parse_max_length_response(Message) ->
     end.
 
 
--spec sync_check_queue_at_capacity(atom(), string(), string()) -> {integer(), integer(), false}.
+-spec sync_check_queue_at_capacity(atom(), string(), string()) -> {integer(), integer(), boolean()}.
 sync_check_queue_at_capacity(PoolNameAtom, Vhost, Queue) ->
     Result = check_current_queue_state(PoolNameAtom, Vhost, Queue, 0),
     case Result of
