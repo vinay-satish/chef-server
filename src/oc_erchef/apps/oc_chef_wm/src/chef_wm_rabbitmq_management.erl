@@ -169,7 +169,7 @@ parse_max_length_response(Message) ->
     end.
 
 
--spec sync_check_queue_at_capacity(atom(), string(), string()) -> {integer(), integer(), boolean()}.
+-spec sync_check_queue_at_capacity(atom(), string(), string()) -> {integer(), integer(), false}.
 sync_check_queue_at_capacity(PoolNameAtom, Vhost, Queue) ->
     Result = check_current_queue_state(PoolNameAtom, Vhost, Queue, 0),
     case Result of
@@ -234,7 +234,7 @@ check_current_queue_length(PoolNameAtom, Vhost, Queue, MaxLength, DroppedSinceLa
     end.
 
 
--spec parse_integer(any()) -> integer | undefined.
+-spec parse_integer(any()) -> integer() | undefined.
 parse_integer(Val) when is_integer(Val) ->
     Val;
 parse_integer(Val) when is_list(Val) ->
