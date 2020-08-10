@@ -61,12 +61,9 @@ check_admins_group_removal_from_grant_ace(OrgId, AuthzId, Type, AclPerm, NewAce)
     <<"grant">> ->
       NewGroups = extract_acl_groups(AclPerm, NewAce),
       CurrentAce = oc_chef_authz_acl:fetch(Type, OrgId, AuthzId),
-      %% CurrentAce always = {error, _} ?
-      % TODO: revert the changes to this case statement and see what happens
       case CurrentAce of
           {error, _} ->
               error;
-          % Dialyzer says this will never match
           _ ->
               CurrentGroups = extract_acl_groups(AclPerm, CurrentAce),
               case check_admins_group_removal(CurrentGroups, NewGroups) of
@@ -82,7 +79,6 @@ check_admins_group_removal_from_grant_ace(OrgId, AuthzId, Type, AclPerm, NewAce)
       false
   end.
 
-%% Dialyzer says this will never be called
 -spec check_admins_group_removal([binary()], [binary()]) -> 'not_removed' | 'removed'.
 check_admins_group_removal(CurrentGroups, NewGroups) ->
   %% Check if the CurrentGroups contains the admin group. If it doesn't, there
@@ -100,7 +96,6 @@ check_admins_group_removal(CurrentGroups, NewGroups) ->
       end
   end.
 
-%% Dialyzer says this will never be called
 -spec contains_admins_group([binary()]) -> boolean().
 contains_admins_group(Groups) ->
   case lists:filter(fun(X) -> X =:= <<"admins">> end, Groups) of
