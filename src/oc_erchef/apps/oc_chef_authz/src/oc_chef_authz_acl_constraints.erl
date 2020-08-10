@@ -61,17 +61,12 @@ check_admins_group_removal_from_grant_ace(OrgId, AuthzId, Type, AclPerm, NewAce)
     <<"grant">> ->
       NewGroups = extract_acl_groups(AclPerm, NewAce),
       CurrentAce = oc_chef_authz_acl:fetch(Type, OrgId, AuthzId),
-      case CurrentAce of
-          {error, _} ->
-              error;
-          _ ->
-              CurrentGroups = extract_acl_groups(AclPerm, CurrentAce),
-              case check_admins_group_removal(CurrentGroups, NewGroups) of
-                not_removed ->
-                  false;
-                removed ->
-                  {true, attempted_admin_group_removal_grant_ace}
-              end
+      CurrentGroups = extract_acl_groups(AclPerm, CurrentAce),
+      case check_admins_group_removal(CurrentGroups, NewGroups) of
+        not_removed ->
+          false;
+        removed ->
+          {true, attempted_admin_group_removal_grant_ace}
       end;
     _Other ->
       %% Needs to return false here, which means all is okay, so this can
