@@ -101,19 +101,19 @@ check_actions_queue_at_capacity(PoolNameAtom, Vhost, Queue) ->
     %% TODO(ssd) 2020-08-10: This whole function is now silly. This fixes dialyzer, but
     %% really the whole thing can be removed, but really really all of the rabbitmq
     %% management code can be removed SOON (TM).
-    %% PreventStartupOnCap = ?QUEUE_MONITOR_SETTING(prevent_erchef_startup_on_full_capacity, false),
+    PreventStartupOnCap = ?QUEUE_MONITOR_SETTING(prevent_erchef_startup_on_full_capacity, false),
     {MaxLength, CurrentLength, QueueAtCapacity} =
         chef_wm_rabbitmq_management:sync_check_queue_at_capacity(PoolNameAtom, Vhost, Queue),
     case QueueAtCapacity of
-        %% true ->
-        %%     case PreventStartupOnCap of
-        %%         true ->
-        %%             lager:critical("Vhost ~p, queue ~p at capacity, cannot start", [Vhost, Queue]),
-        %%             erlang:error(analytics_queue_at_capacity);
-        %%         false ->
-        %%             lager:warning("Vhost ~p, queue ~p at capacity", [Vhost, Queue]),
-        %%             {MaxLength, CurrentLength}
-        %%     end;
+         true ->
+             case PreventStartupOnCap of
+                 true ->
+                     lager:critical("Vhost ~p, queue ~p at capacity, cannot start", [Vhost, Queue]),
+                     erlang:error(analytics_queue_at_capacity);
+                 false ->
+                     lager:warning("Vhost ~p, queue ~p at capacity", [Vhost, Queue]),
+                     {MaxLength, CurrentLength}
+             end;
         false ->
             lager:info("Vhost ~p, queue ~p not at capacity or RabbitMQ Management Plugin unavailable",
                         [Vhost, Queue]),
