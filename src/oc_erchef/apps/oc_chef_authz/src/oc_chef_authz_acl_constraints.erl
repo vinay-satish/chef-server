@@ -27,9 +27,6 @@
 -endif.
 
 -export([check_acl_constraints/5]).
--export([check_admins_group_removal/2]).
--export([check_admins_group_removal_from_grant_ace/5]).
--export([contains_admins_group/1]).
 
 -spec check_acl_constraints(binary(), binary(), atom(), binary(), tuple()) -> ok | [atom(),...].
 check_acl_constraints(OrgId, AuthzId, Type, AclPerm, Ace) ->
