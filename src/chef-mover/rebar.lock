@@ -139,7 +139,7 @@
   2},
  {<<"opscoderl_wm">>,
   {git,"git://github.com/chef/opscoderl_wm.git",
-       {ref,"572d968f7f9f9f49fe155efa7e46dbfc78383ead"}},
+       {ref,"82d38b6807706550aa5c0ae575c98663406d4e49"}},
   0},
  {<<"pooler">>,
   {git,"git://github.com/seth/pooler.git",
