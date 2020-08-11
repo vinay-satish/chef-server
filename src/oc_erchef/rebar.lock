@@ -155,7 +155,7 @@
   0},
  {<<"webmachine">>,
   {git,"git://github.com/chef/webmachine",
-       {ref,"1389b01a9fbc25d36aad8956e08d2d0db242625f"}},
+       {ref,"fb388a09c7a37fe6717202cec029fc1b9b6d9cc2"}},
   1}]}.
 [
 {pkg_hash,[
