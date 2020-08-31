@@ -45,20 +45,20 @@ get_host_port(Config) ->
             Url1
     end.
 
-% construct url from config
-get_host_test() ->
-    Config0 = mini_s3:new("", "", "http://1.2.3.4"),
-    "http://1.2.3.4"      = get_host_noport(Config0),
-    "http://1.2.3.4:80"   = get_host_port(  Config0),
-    Config1 = mini_s3:new("", "", "https://1.2.3.4"),
-    "https://1.2.3.4"     = get_host_noport(Config1),
-    "https://1.2.3.4:443" = get_host_port(  Config1),
-    Config2 = mini_s3:new("", "", "http://1.2.3.4:443"),
-    "http://1.2.3.4"      = get_host_noport(Config2),
-    "http://1.2.3.4:443"  = get_host_port(  Config2),
-    Config3 = mini_s3:new("", "", "https://1.2.3.4:80"),
-    "https://1.2.3.4"     = get_host_noport(Config3),
-    "https://1.2.3.4:80"  = get_host_port(  Config3).
+%% construct url from config
+%get_host_test() ->
+%    Config0 = mini_s3:new("", "", "http://1.2.3.4"),
+%    "http://1.2.3.4"      = get_host_noport(Config0),
+%    "http://1.2.3.4:80"   = get_host_port(  Config0),
+%    Config1 = mini_s3:new("", "", "https://1.2.3.4"),
+%    "https://1.2.3.4"     = get_host_noport(Config1),
+%    "https://1.2.3.4:443" = get_host_port(  Config1),
+%    Config2 = mini_s3:new("", "", "http://1.2.3.4:443"),
+%    "http://1.2.3.4"      = get_host_noport(Config2),
+%    "http://1.2.3.4:443"  = get_host_port(  Config2),
+%    Config3 = mini_s3:new("", "", "https://1.2.3.4:80"),
+%    "https://1.2.3.4"     = get_host_noport(Config3),
+%    "https://1.2.3.4:80"  = get_host_port(  Config3).
 
 base64_checksum_test_() ->
     TestData = [{<<"00ba0db453b47c4c0bb530cf8e481a70">>, <<"ALoNtFO0fEwLtTDPjkgacA==">>},
