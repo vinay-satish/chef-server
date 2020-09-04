@@ -44,7 +44,8 @@ In order to release, you will need the following accounts/permissions:
 
 ### Testing the Release
 
-Every merge to chef-server master must be built, and this build tested with the automated Integration Test Pipeline https://buildkite.com/chef/chef-chef-server-master-integration-test.  The integration test run for the tag being shipped must be successful:
+Every merge to chef-server master must be built, and this build must be tested with the automated Integration Test Pipeline: https://buildkite.com/chef/chef-chef-server-master-integration-test.
+The integration test run for the tag being shipped must be successful.
 
 - Click on `New Build`.
 - Leave `Branch` set to `master`.
