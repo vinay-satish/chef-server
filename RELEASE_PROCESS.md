@@ -73,9 +73,9 @@ null_resource.chef_server_config (remote-exec): Connected!
 null_resource.chef_server_config (remote-exec): echo -e '
 null_resource.chef_server_config (remote-exec): BEGIN INSTALL CHEF SERVER
 ```
-- Obtain the user and password by... ??? `FINISH THIS`
-- Hit the server via `http`, e.g. `http://whatever-public-ip?` `<--- what's the URL?`
-- Next steps <--- `what are these, if any?` <--- 
+- Hit the server via `http://<hostname>` where `hostname` is the DNS name of the emphemeral machine obtained in an earlier step.
+- Enter the username and password to test the login.  Currently the username and password are stored in the following script: https://github.com/chef/chef-server/blob/master/terraform/common/files/add_user.sh
+At the time of this writing the username is `janedoe` and the password is `abc123`.
 
 [insert necessary (azure?) manual testing instructions here]
 
